@@ -1,4 +1,10 @@
 {
-  "date": "Loading...",
-  "categories": []
+  "date": "Friday, April 10, 2026",
+  "generated": "2026-04-10T01:03:09.748Z",
+  "categories": [
+    {
+      "category": "Unknown",
+      "summary": "A large ICU study of adults with ischemic stroke identified three distinct early vital‑sign “trajectory” patterns—tachycardic‑tachypneic, hypertensive‑stable, and low‑diastolic quiescent—with dramatically different mortality risks and better one‑year outcome prediction than standard severity scores, suggesting early physiologic patterns could guide more personalized fluid and sedative strategies. A small safety trial in people with primarily progressive multiple sclerosis found that 12 weeks of supervised intermittent hypoxia (simulating high altitude) was feasible and produced no serious harms, with hints of functional benefit that justify larger controlled trials. And a national Medicaid claims analysis showed people with epilepsy were slightly more likely to receive contraception, while those with intellectual and developmental disabilities were much less likely, with mixed patterns when both conditions co‑occur—highlighting uneven reproductive care that needs attention."
+    }
+  ]
 }
