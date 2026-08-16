@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://mitrapatel1909.github.io/MedSumAI/sitemap.xml
