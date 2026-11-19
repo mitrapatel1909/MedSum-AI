@@ -8,7 +8,7 @@
 
 ## What it does
 
-- Searches PubMed for a topic and summarizes the abstracts it finds, with a citation link for each article
+- Searches PubMed for a topic and summarizes the abstracts it finds, at a reading level you choose (high school, college or pre-med), with a verified citation link for each article
 - Follow-up chat about the summary you just generated
 - Optional free accounts: save summaries to "My Summaries"
 - Free PDF study guides (immune system, cell biology, genetics) with an optional email signup
@@ -20,17 +20,19 @@
 |---|---|
 | Static site (`index.html`, `privacy.html`, `news.html`) | The whole frontend: plain HTML, CSS and JavaScript, no build step |
 | GitHub Pages + Cloudflare | Hosting and the `medsumai.com` domain |
-| n8n on Railway | Backend webhooks: PubMed search, article fetch, then an OpenAI model (currently GPT-5-Mini) writes the summary |
+| Cloudflare Worker (`worker/`, served at `api.medsumai.com`) | The backend: PubMed search, abstract parsing, the OpenAI call, per-visitor rate limits and a daily spending cap |
 | Supabase | Accounts (Auth), saved summaries, the public summary counter, mailing list |
 | Cloudflare Web Analytics | Cookieless visit statistics |
 
 ### Request flow
 
 ```
-Browser ── topic ──► n8n webhook ─► PubMed search ─► fetch abstracts ─► OpenAI summary ─► Markdown
-Browser ◄── summary (rendered with marked + DOMPurify) ◄────────────────────────────────┘
+Browser ── topic + level ──► Worker ─► limits ─► PubMed search ─► fetch abstracts ─► OpenAI ─► Markdown
+Browser ◄── summary (rendered with marked + DOMPurify) ◄───────────────────────────────────────┘
 Browser ── record_search(topic) ──► Supabase (server-side counter and log)
 ```
+
+The model writes the prose. The code adds what it can verify: citations are checked against the PMIDs that were actually fetched (invented ones are dropped), and the Sources section and study-type counts are generated from PubMed's own metadata.
 
 ## Database and security
 
@@ -42,21 +44,36 @@ The browser only talks to Supabase through the public anon key, so everything it
 
 The SQL lives in [`supabase/migrations`](supabase/migrations) and is meant to be applied in order. Migration `002` removes the old open table access and must only be applied once the frontend that uses the functions is live.
 
+## The Worker (backend)
+
+Source in [`worker/src`](worker/src), tests in [`worker/test`](worker/test) (`cd worker && npm test`), bundled output in `worker/dist/worker.js` (`npm run build`).
+
+- `POST /summarize` `{ topic, level? }` returns Markdown. `POST /chat` `{ question, summary }` returns Markdown. `GET /health` returns `ok`.
+- **Limits** (per visitor, by salted IP hash, plus a shared daily cap) are enforced before any PubMed or OpenAI call: 3/min and 12/hour per visitor for summaries, 8/min and 40/hour for chat, 800 summaries and 3,000 chat messages per day overall. Change them with the `SUMMARIZE_PER_MINUTE`, `SUMMARIZE_PER_HOUR`, `SUMMARIZE_PER_DAY_GLOBAL`, `CHAT_PER_MINUTE`, `CHAT_PER_HOUR` and `CHAT_PER_DAY_GLOBAL` variables in the Worker settings. Counters live in a Durable Object and delete themselves when their window ends.
+- Browsers may only call it from medsumai.com (CORS allow-list in `src/index.js`). This is not a security boundary by itself, because other clients can still call the API; the limits are what protect the bill.
+- A search that finds no PubMed articles never calls OpenAI.
+- **Secrets** are set in Cloudflare (Workers & Pages, medsumai-api, Settings, Variables and Secrets), never in the repo: `OPENAI_API_KEY` (required), `IP_SALT` (random, already set), `NCBI_API_KEY` (optional, raises PubMed's rate limit). Optional variables: `MODEL` (default `gpt-5-mini`), `REASONING_EFFORT` (default `minimal`).
+- Deploying: `npm run build`, then upload `dist/worker.js` as the Worker `medsumai-api` with a Durable Object binding named `LIMITER` (class `Limiter`). Re-uploads must keep the existing secrets.
+
+## Tests
+
+- `cd worker && npm test`: 16 unit tests for the Worker (PubMed parsing, citation checking, limits, validation, error handling).
+- `python3 tests/test_site.py`: browser tests for the site with the network stubbed (needs Playwright and Chromium).
+
 ## Known limitations
 
-- **The n8n webhook URLs are public and unauthenticated** (they are visible in the page source). Anyone can call them directly. Fixing this means moving the backend behind a small authenticated, rate-limited proxy (for example a Cloudflare Worker).
 - **The Daily Feed (`news.html`) is paused.** It reads `news.json` from this repo, which the old n8n workflow wrote and is no longer being generated. The page shows a "taking a break" message and is set to `noindex`. When the generator is running again, remove the `noindex` meta tag in `news.html`, add the page back to `sitemap.xml`, and re-add the link in the site header.
 - Summaries use abstracts only, not full papers, and are not graded for study quality.
 
 ## Settings to check outside this repo
 
 - Supabase → Authentication → URL configuration: `https://medsumai.com` should be in the redirect allow-list
-- Supabase → Authentication → password protection: enable leaked-password protection
-- n8n webhook CORS: allow `https://medsumai.com`
+- Supabase → Authentication → password protection: leaked-password protection needs the Pro plan; it is off on the Free plan
+- Cloudflare → Workers & Pages → medsumai-api: `OPENAI_API_KEY` secret is set, and an OpenAI monthly spending limit is configured as a second safety net
 
 ## Running it locally
 
-There is no build step. Serve the folder with any static server (for example `python3 -m http.server`) and open `index.html`. Search needs the live backend, so it will only work if the n8n webhooks are reachable.
+There is no build step. Serve the folder with any static server (for example `python3 -m http.server`) and open `index.html`. Search calls the live backend at `api.medsumai.com`, which only accepts browser requests from medsumai.com, so searching does not work from a local server. The browser tests stub the backend instead.
 
 ## Notes
 

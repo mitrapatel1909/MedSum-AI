@@ -175,7 +175,7 @@
       <li><strong>Supabase</strong> — stores account information, saved summaries, and usage data, and handles login/authentication.</li>
       <li><strong>OpenAI</strong> — generates the AI summaries and follow-up chat responses.</li>
       <li><strong>PubMed / NCBI</strong> — the public database MedSumAI searches for articles. No personal data is sent here, only search terms.</li>
-      <li><strong>Railway</strong> — hosts the backend automation (built with n8n) that connects PubMed and OpenAI to the website.</li>
+      <li><strong>Cloudflare Workers</strong> — runs the backend that connects PubMed and OpenAI to the website. To prevent abuse it counts requests per visitor using a salted hash of your IP address (never the address itself); those counters delete themselves within about an hour.</li>
       <li><strong>GitHub Pages</strong> — hosts this website itself.</li>
       <li><strong>Cloudflare Web Analytics</strong> — provides anonymous, cookieless visit statistics. It does not use tracking cookies or collect personally identifiable information.</li>
     </ul>

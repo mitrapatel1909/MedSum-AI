@@ -132,6 +132,9 @@
     .search-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 2rem; }
     .search-label { display: block; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
     .input-row { display: flex; gap: 0.75rem; }
+    .level-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.9rem; flex-wrap: wrap; }
+    .level-row label { font-size: 0.78rem; color: var(--muted); }
+    .level-row select { background: var(--bg, #0b1210); color: inherit; border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; font: inherit; font-size: 0.85rem; }
  
     input[type="text"] { flex: 1; padding: 0.85rem 1.2rem; font-family: 'DM Sans', sans-serif; font-size: 1rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--ink); outline: none; transition: border-color 0.2s; }
     input[type="text"]:focus { border-color: var(--accent); }
@@ -585,6 +588,14 @@
       <input type="text" id="topicInput" placeholder="e.g. CRISPR cancer therapy, Alzheimer's, COVID-19 vaccines..." />
       <button id="searchBtn" onclick="search()">Summarize →</button>
     </div>
+    <div class="level-row">
+      <label for="levelSelect">Explain it for</label>
+      <select id="levelSelect">
+        <option value="high_school">High school (AP Bio)</option>
+        <option value="undergrad" selected>College undergrad</option>
+        <option value="premed">Pre-med / med student</option>
+      </select>
+    </div>
     <div class="examples">
       <span>Try:</span>
       <button class="pill" onclick="setTopic('immunity')">Immunity</button>
@@ -924,7 +935,7 @@
 </section>
 
 <footer>
-  Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a> &amp; GPT-5-Mini &nbsp;·&nbsp; Built with n8n &nbsp;·&nbsp; <a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank">GitHub</a> &nbsp;·&nbsp; <a href="privacy.html">Privacy Policy</a><br><span style="opacity:0.8">For education only. Not medical advice.</span>
+  Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a> &amp; OpenAI &nbsp;·&nbsp; <a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank">GitHub</a> &nbsp;·&nbsp; <a href="privacy.html">Privacy Policy</a><br><span style="opacity:0.8">For education only. Not medical advice.</span>
 </footer>
  
 <script>
@@ -1481,7 +1492,14 @@
   document.addEventListener('click', (e) => { if (!e.target.closest('.examples-wrapper')) document.getElementById('topicsDropdown')?.classList.remove('open'); });
  
   // ── MAIN SEARCH ───────────────────────────────────────────────
-  const WEBHOOK_URL = 'https://n8n-production-bb89.up.railway.app/webhook/b6a9e925-8c79-46a0-af66-3ee4f23ce9a9';
+  const API_BASE = 'https://api.medsumai.com';
+  const WEBHOOK_URL = API_BASE + '/summarize';
+  // Remember the reader's level between visits (best effort: storage can be unavailable).
+  (function () {
+    const sel = document.getElementById('levelSelect');
+    try { const saved = localStorage.getItem('msai_level'); if (saved && sel.querySelector('option[value="' + saved + '"]')) sel.value = saved; } catch (e) {}
+    sel.addEventListener('change', () => { try { localStorage.setItem('msai_level', sel.value); } catch (e) {} });
+  })();
   let currentSummary = '';
   let loadingInterval = null;
  
@@ -1510,7 +1528,15 @@
     document.getElementById('searchBtn').textContent = 'Summarize →';
   }
  
+  // Build an Error from a failed API response, keeping the server's user-facing message if it sent one.
+  async function apiError(response) {
+    const err = new Error('Server error: ' + response.status);
+    try { const data = await response.json(); if (data && typeof data.error === 'string') err.userMessage = data.error; } catch (e) {}
+    return err;
+  }
+
   function friendlyRequestError(err) {
+    if (err && err.userMessage) return err.userMessage;
     const msg = String((err && err.message) || '');
     if (err && err.name === 'AbortError') return 'This is taking longer than expected. Please try again in a moment.';
     if (/Server error: 429/.test(msg)) return 'Too many requests right now. Please wait a minute and try again.';
@@ -1527,9 +1553,9 @@
       const timer = setTimeout(() => controller.abort(), 90000);
       let response;
       try {
-        response = await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topic }), signal: controller.signal });
+        response = await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topic, level: document.getElementById('levelSelect').value }), signal: controller.signal });
       } finally { clearTimeout(timer); }
-      if (!response.ok) throw new Error(`Server error: ${response.status}`);
+      if (!response.ok) throw await apiError(response);
       const html = await response.text();
       trackSearch(topic);
       hideLoading();
@@ -1555,7 +1581,7 @@
   document.getElementById('topicInput').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
  
   // ── FOLLOW-UP CHAT ────────────────────────────────────────────
-  const FOLLOWUP_WEBHOOK_URL = 'https://n8n-production-bb89.up.railway.app/webhook/f2bd4e59-d248-42ad-905e-9570e8ce55bd';
+  const FOLLOWUP_WEBHOOK_URL = API_BASE + '/chat';
  
   function addChatMsg(text, role) {
     const msgs = document.getElementById('chatMessages');
@@ -1585,7 +1611,7 @@
       try {
         response = await fetch(FOLLOWUP_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, summary: currentSummary }), signal: controller.signal });
       } finally { clearTimeout(timer); }
-      if (!response.ok) throw new Error(`Server error: ${response.status}`);
+      if (!response.ok) throw await apiError(response);
       const text = await response.text();
       const cleaned = text.trim().replace(/^=+/, '').trim();
       typing.innerHTML = safeRender(cleaned);
