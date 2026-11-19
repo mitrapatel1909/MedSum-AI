@@ -5,7 +5,7 @@
 // Secrets (set in the Cloudflare dashboard, never in code): OPENAI_API_KEY, IP_SALT. Optional: NCBI_API_KEY.
 
 import { searchPubMed, parseInput, fetchPaper } from './pubmed.js';
-import { buildSummaryMessages, buildChatMessages, assembleSummary, DEFAULT_LEVEL, LEVELS } from './prompt.js';
+import { buildSummaryMessages, buildChatMessages, buildCardMessages, parseCards, assembleSummary, DEFAULT_LEVEL, LEVELS } from './prompt.js';
 export { Limiter } from './limiter.js';
 
 const ALLOWED_ORIGINS = ['https://medsumai.com', 'https://www.medsumai.com', 'https://mitrapatel1909.github.io'];
@@ -17,6 +17,7 @@ function limitsFor(env) {
   return {
     summarize: { minute: num(env.SUMMARIZE_PER_MINUTE, 3), hour: num(env.SUMMARIZE_PER_HOUR, 12), day: num(env.SUMMARIZE_PER_DAY_GLOBAL, 800) },
     chat: { minute: num(env.CHAT_PER_MINUTE, 8), hour: num(env.CHAT_PER_HOUR, 40), day: num(env.CHAT_PER_DAY_GLOBAL, 3000) },
+    cards: { minute: num(env.CARDS_PER_MINUTE, 3), hour: num(env.CARDS_PER_HOUR, 15), day: num(env.CARDS_PER_DAY_GLOBAL, 600) },
   };
 }
 
@@ -171,6 +172,25 @@ async function handleChat(request, env, deps) {
   }
 }
 
+async function handleCards(request, env, deps) {
+  const { body, error } = await readBody(request);
+  if (error) return json(request, 400, { error });
+  const summary = typeof body.summary === 'string' ? body.summary.trim() : '';
+  if (summary.length < 200 || summary.length > 14000) return json(request, 400, { error: 'Summary missing or too long.' });
+  const lim = await checkLimits(env, 'cards', await visitorKey(request, env));
+  if (!lim.ok) {
+    const msg = lim.global ? 'MedSumAI has reached its free daily limit. Please come back tomorrow.' : 'Too many requests. Please wait a bit and try again.';
+    return json(request, 429, { error: msg }, { 'Retry-After': String(lim.retryAfter) });
+  }
+  try {
+    const cards = parseCards(await callOpenAI(env, buildCardMessages(summary), 1500, deps.fetchImpl));
+    if (cards.length < 3) return json(request, 502, { error: 'Could not make flashcards from that summary. Please try again.' });
+    return json(request, 200, { cards }, { 'Cache-Control': 'no-store' });
+  } catch {
+    return json(request, 502, { error: 'The summarizer is temporarily unavailable. Please try again in a few minutes.' });
+  }
+}
+
 export function makeHandler(deps = { fetchImpl: (...a) => fetch(...a) }) {
   return async function handle(request, env) {
     const url = new URL(request.url);
@@ -184,6 +204,7 @@ export function makeHandler(deps = { fetchImpl: (...a) => fetch(...a) }) {
     try {
       if (request.method === 'POST' && url.pathname === '/summarize') return await handleSummarize(request, env, deps);
       if (request.method === 'POST' && url.pathname === '/chat') return await handleChat(request, env, deps);
+      if (request.method === 'POST' && url.pathname === '/flashcards') return await handleCards(request, env, deps);
     } catch {
       return json(request, 500, { error: 'Something went wrong. Please try again.' });
     }

@@ -6,13 +6,13 @@
   <meta name="theme-color" content="#2d6a4f"/>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
   <link rel="icon" href="/favicon.ico" sizes="32x32"/>
-  <title>MedSumAI — Biomedical Research Summarizer</title>
+  <title>MedSumAI — Understand Real Medical Research | Free for Pre-Med &amp; AP Bio Students</title>
   <meta name="google-site-verification" content="0BtgqbhdfVsy6cblx-28My4q8eTLT5Krnx2RwVRqVQM" />
-  <meta name="description" content="MedSumAI turns any biomedical topic into a clear, AI-generated summary sourced from real PubMed articles — complete with citations and links to the original research. No medical degree required."/>
+  <meta name="description" content="Free tool for pre-med, AP Biology and undergrad students: paste a PubMed paper or type a topic and get a cited plain-English summary at your reading level, an honest evidence check, and flashcards you can export to Anki."/>
   <link rel="canonical" href="https://medsumai.com/"/>
   <meta property="og:type" content="website"/>
   <meta property="og:title" content="MedSumAI — Biomedical Research Summarizer"/>
-  <meta property="og:description" content="Type any biomedical topic and get an AI-generated summary from real PubMed articles — with citations."/>
+  <meta property="og:description" content="Paste a paper or type a topic. Get a cited plain-English summary at your level, an evidence check, and flashcards. Free for pre-med and AP Bio students."/>
   <meta property="og:url" content="https://medsumai.com/"/>
   <meta property="og:site_name" content="MedSumAI"/>
   <meta property="og:image" content="https://medsumai.com/og-image.png"/>
@@ -21,7 +21,7 @@
   <meta property="og:image:alt" content="MedSumAI: medical research, explained simply"/>
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="twitter:title" content="MedSumAI — Biomedical Research Summarizer"/>
-  <meta name="twitter:description" content="Type any biomedical topic and get an AI-generated summary from real PubMed articles — with citations."/>
+  <meta name="twitter:description" content="Paste a paper or type a topic. Get a cited plain-English summary at your level, an evidence check, and flashcards. Free for pre-med and AP Bio students."/>
   <meta name="twitter:image" content="https://medsumai.com/og-image.png"/>
   <script type="application/ld+json">
   {
@@ -29,7 +29,8 @@
     "@type": "SoftwareApplication",
     "name": "MedSumAI",
     "url": "https://medsumai.com/",
-    "description": "MedSumAI turns any biomedical topic into a clear, AI-generated summary sourced from real PubMed articles, complete with citations and direct links to the original research.",
+    "description": "Free tool for pre-med, AP Biology and undergraduate students: summarizes real PubMed research in plain English at the reader's level, with citations, an evidence check and exportable flashcards.",
+    "audience": {"@type": "EducationalAudience", "educationalRole": "student"},
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "Any",
     "offers": {
@@ -216,6 +217,19 @@
  
     .chat-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: none; margin-bottom: 2rem; }
     .chat-box.visible { display: block; }
+    .cards-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: none; margin-bottom: 1.5rem; }
+    .cards-box.visible { display: block; }
+    .cards-head { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; }
+    .cards-head .cards-title { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .cards-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .cards-list { border-top: 1px solid var(--border); padding: 1rem 1.5rem 1.25rem; display: none; gap: 0.6rem; flex-direction: column; }
+    .cards-list.visible { display: flex; }
+    .cards-hint { font-size: 0.8rem; color: var(--muted); }
+    .flashcard { text-align: left; width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1rem; cursor: pointer; color: var(--ink); font: inherit; }
+    .flashcard:hover { border-color: var(--green, #2d6a4f); }
+    .flashcard .fc-q { font-weight: 500; }
+    .flashcard .fc-a { display: none; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); color: var(--muted); }
+    .flashcard.open .fc-a { display: block; }
     .chat-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); font-size: 0.78rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
     .chat-messages { padding: 1rem 1.5rem; max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; }
     .chat-msg { padding: 0.75rem 1rem; border-radius: 12px; font-size: 0.9rem; line-height: 1.6; max-width: 85%; animation: fadeUp 0.3s ease; }
@@ -564,7 +578,7 @@
         <h1>Medical research,<br><em>explained simply.</em></h1>
       </div>
     </div>
-    <p>Type any biomedical topic and get an AI-generated summary from real PubMed articles — with citations.</p>
+    <p>Made for pre-med and AP Bio students. Paste a paper or type a topic and get a cited, plain-English summary at your level, an honest read on how strong the evidence is, and flashcards you can export to Anki.</p>
   </div>
  
   <div class="stats-bar">
@@ -598,6 +612,7 @@
     </div>
     <div class="examples">
       <span>Try:</span>
+      <button class="pill" onclick="setTopic('vitamin D and depression')">Vitamin D &amp; depression</button>
       <button class="pill" onclick="setTopic('immunity')">Immunity</button>
       <button class="pill" onclick="setTopic('diabetes type 2')">Diabetes</button>
       <button class="pill" onclick="setTopic('Alzheimer disease')">Alzheimer's</button>
@@ -702,6 +717,17 @@
     <div class="result-disclaimer">Educational summary of published research, written by AI. It can contain mistakes, so check the linked PubMed sources. This is not medical advice; talk to a qualified clinician about health decisions.</div>
   </div>
  
+  <div class="cards-box" id="cardsBox">
+    <div class="cards-head">
+      <div class="cards-title">🃏 Flashcards</div>
+      <div class="cards-actions">
+        <button class="copy-btn" id="cardsBtn" onclick="makeCards()">Make flashcards from this summary</button>
+        <button class="copy-btn" id="ankiBtn" onclick="downloadAnki()" style="display:none">Download for Anki</button>
+      </div>
+    </div>
+    <div class="cards-list" id="cardsList" aria-live="polite"></div>
+  </div>
+
   <div class="chat-box" id="chatBox">
     <div class="chat-header">💬 Follow-up Questions</div>
     <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
@@ -1510,6 +1536,7 @@
     document.getElementById('errorBox').classList.remove('visible');
     document.getElementById('resultBox').classList.remove('visible');
     document.getElementById('chatBox').classList.remove('visible');
+    document.getElementById('cardsBox').classList.remove('visible');
     document.getElementById('searchBtn').disabled = true;
     document.getElementById('searchBtn').textContent = 'Searching...';
     const steps = ['step1','step2','step3','step4'];
@@ -1566,6 +1593,7 @@
       document.getElementById('resultContent').innerHTML = safeRender(cleaned);
       document.getElementById('resultBox').classList.add('visible');
       document.getElementById('chatBox').classList.add('visible');
+      resetCards();
       document.getElementById('chatMessages').innerHTML = '';
       document.getElementById('chatInput').value = '';
       document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1582,6 +1610,7 @@
  
   // ── FOLLOW-UP CHAT ────────────────────────────────────────────
   const FOLLOWUP_WEBHOOK_URL = API_BASE + '/chat';
+  const FLASHCARDS_URL = API_BASE + '/flashcards';
  
   function addChatMsg(text, role) {
     const msgs = document.getElementById('chatMessages');
@@ -1623,6 +1652,74 @@
   }
  
   document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+
+  // ── FLASHCARDS: generate from the summary, flip to reveal, export for Anki ──
+  let currentCards = [];
+  function resetCards() {
+    currentCards = [];
+    const list = document.getElementById('cardsList');
+    list.textContent = ''; list.classList.remove('visible');
+    document.getElementById('ankiBtn').style.display = 'none';
+    const btn = document.getElementById('cardsBtn');
+    btn.disabled = false; btn.textContent = 'Make flashcards from this summary';
+    document.getElementById('cardsBox').classList.toggle('visible', currentSummary.length >= 200);
+  }
+  function renderCards() {
+    const list = document.getElementById('cardsList');
+    list.textContent = '';
+    const hint = document.createElement('div');
+    hint.className = 'cards-hint';
+    hint.textContent = 'Tap a card to reveal the answer. Cards are made by AI from the summary above; check them against the sources.';
+    list.appendChild(hint);
+    currentCards.forEach(c => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'flashcard';
+      const q = document.createElement('div'); q.className = 'fc-q'; q.textContent = c.front;
+      const a = document.createElement('div'); a.className = 'fc-a'; a.textContent = c.back;
+      b.append(q, a);
+      b.addEventListener('click', () => { b.classList.toggle('open'); });
+      list.appendChild(b);
+    });
+    list.classList.add('visible');
+    document.getElementById('ankiBtn').style.display = '';
+  }
+  async function makeCards() {
+    if (!currentSummary) return;
+    const btn = document.getElementById('cardsBtn');
+    btn.disabled = true; btn.textContent = 'Making flashcards...';
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 60000);
+      let response;
+      try {
+        response = await fetch(FLASHCARDS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ summary: currentSummary }), signal: controller.signal });
+      } finally { clearTimeout(timer); }
+      if (!response.ok) throw await apiError(response);
+      const data = await response.json();
+      currentCards = Array.isArray(data.cards) ? data.cards.filter(c => c && c.front && c.back) : [];
+      if (!currentCards.length) throw new Error('Server error: 502');
+      renderCards();
+      btn.textContent = 'Make new flashcards'; btn.disabled = false;
+    } catch (e) {
+      btn.textContent = 'Make flashcards from this summary'; btn.disabled = false;
+      const list = document.getElementById('cardsList');
+      list.textContent = friendlyRequestError(e); list.classList.add('visible');
+    }
+  }
+  // Anki "Import File" format: tab-separated, front then back; header lines set the separator and plain text.
+  function ankiText(cards) {
+    const clean = t => String(t).replace(/[\t\r\n]+/g, ' ').trim();
+    return '#separator:tab\n#html:false\n#tags column:3\n' + cards.map(c => clean(c.front) + '\t' + clean(c.back) + '\tmedsumai').join('\n') + '\n';
+  }
+  function downloadAnki() {
+    if (!currentCards.length) return;
+    const topic = (document.getElementById('resultTopic').textContent || 'flashcards').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'flashcards';
+    const url = URL.createObjectURL(new Blob([ankiText(currentCards)], { type: 'text/plain;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'medsumai-' + topic + '.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
  
   function copyResult() {
     const text = document.getElementById('resultContent').innerText;

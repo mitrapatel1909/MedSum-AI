@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseArticles, decodeEntities, classifyStudy, cleanTerm, searchPubMed, parseInput, fetchPaper } from '../src/pubmed.js';
-import { linkCitations, assembleSummary, evidenceLine, evidenceNote, pluralize } from '../src/prompt.js';
+import { linkCitations, assembleSummary, evidenceLine, evidenceNote, pluralize, parseCards } from '../src/prompt.js';
 import { makeHandler, validTopic } from '../src/index.js';
 import { XML, makeFetch, makeLimiterNs } from './fixtures.js';
 
@@ -289,4 +289,47 @@ test('summarize: pasted paper still counts against the rate limit', async () => 
   const e = env({ SUMMARIZE_PER_MINUTE: '1' });
   assert.equal((await h(post('/summarize', { topic: '22222222' }), e)).status, 200);
   assert.equal((await h(post('/summarize', { topic: '22222222' }), e)).status, 429);
+});
+
+const CARD_TEXT = `Q: What did the meta-analysis find?
+A: Small reductions in depressive symptoms [PMID 11111111](https://pubmed.ncbi.nlm.nih.gov/11111111/).
+
+Q: What is a meta-analysis?
+A: A study that pools results from many trials. [PMID 11111111]
+
+Q: Why is this only background?
+A: Abstracts cannot show everything.
+It also has limits.
+
+Q: bad
+A: x`;
+
+test('parseCards parses Q/A blocks, strips citations, drops malformed cards', () => {
+  const cards = parseCards(CARD_TEXT);
+  assert.equal(cards.length, 3);
+  assert.equal(cards[0].back, 'Small reductions in depressive symptoms.');
+  assert.equal(cards[1].back, 'A study that pools results from many trials.');
+  assert.equal(cards[2].back, 'Abstracts cannot show everything. It also has limits.');
+  assert.deepEqual(parseCards('nonsense'), []);
+});
+
+const SUMMARY = '## In plain English\n' + 'Vitamin D may modestly reduce depressive symptoms. '.repeat(8);
+
+test('flashcards: returns JSON cards, one OpenAI call, same origin and limits rules', async () => {
+  const f = makeFetch({ openaiText: CARD_TEXT });
+  const h = makeHandler({ fetchImpl: f });
+  const e = env({ CARDS_PER_MINUTE: '1' });
+  const res = await h(post('/flashcards', { summary: SUMMARY }), e);
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).cards.length, 3);
+  assert.equal(f.calls.filter((c) => c.url.includes('api.openai.com')).length, 1);
+  assert.equal((await h(post('/flashcards', { summary: SUMMARY }), e)).status, 429);
+  assert.equal((await h(post('/flashcards', { summary: 'short' }), env())).status, 400);
+  assert.equal((await h(post('/flashcards', { summary: SUMMARY }, { Origin: 'https://evil.example' }), env())).status, 403);
+});
+
+test('flashcards: unusable model output gives a friendly 502', async () => {
+  const f = makeFetch({ openaiText: 'I cannot do that.' });
+  const res = await makeHandler({ fetchImpl: f })(post('/flashcards', { summary: SUMMARY }), env());
+  assert.equal(res.status, 502);
 });
