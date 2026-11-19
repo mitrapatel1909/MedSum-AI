@@ -4,7 +4,7 @@
 //   GET  /health                                -> "ok"
 // Secrets (set in the Cloudflare dashboard, never in code): OPENAI_API_KEY, IP_SALT. Optional: NCBI_API_KEY.
 
-import { searchPubMed } from './pubmed.js';
+import { searchPubMed, parseInput, fetchPaper } from './pubmed.js';
 import { buildSummaryMessages, buildChatMessages, assembleSummary, DEFAULT_LEVEL, LEVELS } from './prompt.js';
 export { Limiter } from './limiter.js';
 
@@ -109,7 +109,8 @@ async function callOpenAI(env, messages, maxTokens, fetchImpl = fetch) {
 async function handleSummarize(request, env, deps) {
   const { body, error } = await readBody(request);
   if (error) return json(request, 400, { error });
-  const topic = validTopic(body.topic);
+  const paper = typeof body.topic === 'string' ? parseInput(body.topic) : null;
+  const topic = paper ? 'one specific paper' : validTopic(body.topic);
   if (!topic) return json(request, 400, { error: 'Please enter a medical or biology topic (3 to 200 characters).' });
   const level = Object.hasOwn(LEVELS, body.level) ? body.level : DEFAULT_LEVEL;
 
@@ -121,7 +122,17 @@ async function handleSummarize(request, env, deps) {
 
   let articles;
   try {
-    articles = await searchPubMed(topic, { fetchImpl: deps.fetchImpl, apiKey: env.NCBI_API_KEY });
+    if (paper) {
+      const r = await fetchPaper(paper, { fetchImpl: deps.fetchImpl, apiKey: env.NCBI_API_KEY });
+      if (!r.article) {
+        return markdown(request, r.reason === 'no_abstract'
+          ? '## No abstract available\nThat paper is on PubMed but has no abstract, and MedSumAI only summarizes abstracts. Try searching its topic instead.'
+          : '## Paper not found\nI could not find that paper on PubMed. Check the PMID, DOI or link, or search its topic instead.');
+      }
+      articles = [r.article];
+    } else {
+      articles = await searchPubMed(topic, { fetchImpl: deps.fetchImpl, apiKey: env.NCBI_API_KEY });
+    }
   } catch {
     return json(request, 502, { error: 'PubMed is not responding right now. Please try again shortly.' });
   }
@@ -133,7 +144,7 @@ async function handleSummarize(request, env, deps) {
     );
   }
   try {
-    const text = await callOpenAI(env, buildSummaryMessages(topic, articles, level), 1800, deps.fetchImpl);
+    const text = await callOpenAI(env, buildSummaryMessages(paper ? `one specific paper (PMID ${articles[0].pmid}): ${articles[0].title}` : topic, articles, level), 1800, deps.fetchImpl);
     return markdown(request, assembleSummary(text, articles));
   } catch {
     return json(request, 502, { error: 'The summarizer is temporarily unavailable. Please try again in a few minutes.' });

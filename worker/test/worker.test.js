@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseArticles, decodeEntities, classifyStudy, cleanTerm, searchPubMed } from '../src/pubmed.js';
+import { parseArticles, decodeEntities, classifyStudy, cleanTerm, searchPubMed, parseInput, fetchPaper } from '../src/pubmed.js';
 import { linkCitations, assembleSummary, evidenceLine, evidenceNote, pluralize } from '../src/prompt.js';
 import { makeHandler, validTopic } from '../src/index.js';
 import { XML, makeFetch, makeLimiterNs } from './fixtures.js';
@@ -231,4 +231,62 @@ test('searchPubMed retries a 429 and then succeeds', async () => {
   const arts = await searchPubMed('vitamin D', { fetchImpl: flaky });
   assert.equal(arts.length, 2);
   assert.equal(n, 2);
+});
+
+test('parseInput recognises PMIDs, PubMed links and DOIs, and ignores topics', () => {
+  assert.deepEqual(parseInput('39552387'), { kind: 'pmid', value: '39552387' });
+  assert.deepEqual(parseInput('PMID: 39552387'), { kind: 'pmid', value: '39552387' });
+  assert.deepEqual(parseInput('https://pubmed.ncbi.nlm.nih.gov/39552387/'), { kind: 'pmid', value: '39552387' });
+  assert.deepEqual(parseInput('pubmed.ncbi.nlm.nih.gov/39552387/?term=x'), { kind: 'pmid', value: '39552387' });
+  assert.deepEqual(parseInput('https://www.ncbi.nlm.nih.gov/pubmed/12345678'), { kind: 'pmid', value: '12345678' });
+  assert.deepEqual(parseInput('10.1017/S0033291724001234'), { kind: 'doi', value: '10.1017/S0033291724001234' });
+  assert.deepEqual(parseInput('doi:10.1038/s41586-020-2649-2'), { kind: 'doi', value: '10.1038/s41586-020-2649-2' });
+  assert.deepEqual(parseInput('https://doi.org/10.1038/s41586-020-2649-2.'), { kind: 'doi', value: '10.1038/s41586-020-2649-2' });
+  assert.equal(parseInput('vitamin D and depression'), null);
+  assert.equal(parseInput('COVID-19 2021'), null);
+  assert.equal(parseInput('https://evil.example/pubmed.ncbi.nlm.nih.gov/123'), null);
+  assert.equal(parseInput(''), null);
+});
+
+test('summarize: pasted PMID fetches that one paper (no search) and summarizes it', async () => {
+  const f = makeFetch({ openaiText: 'Finding [PMID 11111111].' });
+  const res = await makeHandler({ fetchImpl: f })(post('/summarize', { topic: 'https://pubmed.ncbi.nlm.nih.gov/11111111/' }), env());
+  assert.equal(res.status, 200);
+  const body = await res.text();
+  assert.match(body, /pubmed\.ncbi\.nlm\.nih\.gov\/11111111/);
+  assert.match(body, /Based on 1 PubMed abstract/);
+  assert.equal(f.calls.filter((c) => c.url.includes('esearch')).length, 0);
+  assert.equal(f.calls.filter((c) => c.url.includes('api.openai.com')).length, 1);
+  const sent = JSON.parse(f.calls.find((c) => c.url.includes('api.openai.com')).init.body);
+  assert.match(sent.messages[1].content, /one specific paper \(PMID 11111111\)/);
+});
+
+test('summarize: pasted DOI is resolved with a quoted [AID] search', async () => {
+  const f = makeFetch({ ids: { esearchresult: { idlist: ['11111111'] } } });
+  const res = await makeHandler({ fetchImpl: f })(post('/summarize', { topic: 'doi:10.1000/abc.123' }), env());
+  assert.equal(res.status, 200);
+  const search = f.calls.find((c) => c.url.includes('esearch'));
+  assert.match(decodeURIComponent(search.url), /"10\.1000\/abc\.123"\[AID\]/);
+});
+
+test('summarize: unknown DOI says not found, with no OpenAI call', async () => {
+  const f = makeFetch({ ids: { esearchresult: { idlist: [] } } });
+  const res = await makeHandler({ fetchImpl: f })(post('/summarize', { topic: '10.1000/nope' }), env());
+  assert.match(await res.text(), /Paper not found/);
+  assert.equal(f.calls.filter((c) => c.url.includes('api.openai.com')).length, 0);
+});
+
+test('summarize: paper with no abstract is explained, not invented', async () => {
+  const xml = XML.slice(XML.indexOf('<PubmedArticle><MedlineCitation><PMID Version="1">33333333'));
+  const f = makeFetch({ xml: '<PubmedArticleSet>' + xml });
+  const res = await makeHandler({ fetchImpl: f })(post('/summarize', { topic: '33333333' }), env());
+  assert.match(await res.text(), /No abstract available/);
+  assert.equal(f.calls.filter((c) => c.url.includes('api.openai.com')).length, 0);
+});
+
+test('summarize: pasted paper still counts against the rate limit', async () => {
+  const h = makeHandler({ fetchImpl: makeFetch() });
+  const e = env({ SUMMARIZE_PER_MINUTE: '1' });
+  assert.equal((await h(post('/summarize', { topic: '22222222' }), e)).status, 200);
+  assert.equal((await h(post('/summarize', { topic: '22222222' }), e)).status, 429);
 });
