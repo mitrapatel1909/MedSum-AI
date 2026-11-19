@@ -19,12 +19,18 @@ export const XML = `<?xml version="1.0"?>
 export const SEARCH_JSON = { esearchresult: { idlist: ['22222222', '11111111', '33333333'] } };
 
 // A fake fetch that serves PubMed and OpenAI and records every call.
-export function makeFetch({ openaiText = 'ok', openaiStatus = 200, ids = SEARCH_JSON, xml = XML, pubmedStatus = 200 } = {}) {
+export function makeFetch({ openaiText = 'ok', openaiStatus = 200, ids = SEARCH_JSON, strongIds = [], strongStatus = 200, xml = XML, pubmedStatus = 200 } = {}) {
   const calls = [];
   const fn = async (url, init = {}) => {
     calls.push({ url: String(url), init });
     const u = String(url);
-    if (u.includes('esearch.fcgi')) return pubmedStatus === 200 ? new Response(JSON.stringify(ids), { status: 200 }) : new Response('x', { status: pubmedStatus });
+    if (u.includes('esearch.fcgi')) {
+      if (decodeURIComponent(u).includes('[pt]')) {
+        // the evidence-first pass (meta-analyses / systematic reviews / RCTs)
+        return strongStatus === 200 ? new Response(JSON.stringify({ esearchresult: { idlist: strongIds } }), { status: 200 }) : new Response('x', { status: strongStatus });
+      }
+      return pubmedStatus === 200 ? new Response(JSON.stringify(ids), { status: 200 }) : new Response('x', { status: pubmedStatus });
+    }
     if (u.includes('efetch.fcgi')) return new Response(xml, { status: 200 });
     if (u.includes('api.openai.com')) {
       if (openaiStatus !== 200) return new Response('{}', { status: openaiStatus });

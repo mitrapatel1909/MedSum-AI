@@ -77,27 +77,51 @@ export function parseArticles(xml) {
 
 async function getWithRetry(url, fetchImpl) {
   let lastStatus = 0;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const waits = [700, 1600]; // PubMed allows about 3 requests/second without an API key; back off when it says 429
+  for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetchImpl(url, { signal: AbortSignal.timeout(15000), headers: { 'User-Agent': 'MedSumAI/1.0 (https://medsumai.com)' } });
     if (res.ok) return res;
     lastStatus = res.status;
     if (res.status !== 429 && res.status < 500) break;
-    await new Promise((r) => setTimeout(r, 800));
+    if (attempt < waits.length) await new Promise((r) => setTimeout(r, waits[attempt] + Math.floor(Math.random() * 300)));
   }
   throw new Error(`PubMed request failed (${lastStatus})`);
 }
 
-export async function searchPubMed(topic, { fetchImpl = fetch, apiKey, retmax = 10, maxArticles = 8 } = {}) {
+// Strongest designs first. A broad topic searched by plain relevance is mostly narrative reviews,
+// so we also run a second search restricted to pooled analyses and trials from the last 10 years.
+const STRONG_FILTER = '(meta-analysis[pt] OR systematic review[pt] OR randomized controlled trial[pt])';
+
+export function cleanTerm(topic) {
+  // Square brackets and parentheses are PubMed field/grouping syntax; visitors do not get to use them.
+  return topic.replace(/[\[\]()]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+async function esearch(term, retmax, common, fetchImpl) {
+  const url = `${EUTILS}/esearch.fcgi?db=pubmed&retmode=json&sort=relevance&retmax=${retmax}&term=${encodeURIComponent(term)}&${common}`;
+  const res = await getWithRetry(url, fetchImpl);
+  const json = await res.json();
+  return (json && json.esearchresult && json.esearchresult.idlist) || [];
+}
+
+export async function searchPubMed(topic, { fetchImpl = (...a) => fetch(...a), apiKey, maxArticles = 8, strongCount = 4, now = new Date() } = {}) {
   const common = `tool=medsumai&email=${encodeURIComponent('hello@medsumai.com')}${apiKey ? `&api_key=${encodeURIComponent(apiKey)}` : ''}`;
-  const searchUrl = `${EUTILS}/esearch.fcgi?db=pubmed&retmode=json&sort=relevance&retmax=${retmax}&term=${encodeURIComponent(topic)}&${common}`;
-  const sres = await getWithRetry(searchUrl, fetchImpl);
-  const sjson = await sres.json();
-  const ids = (sjson && sjson.esearchresult && sjson.esearchresult.idlist) || [];
+  const term = cleanTerm(topic);
+  if (!term) return [];
+  const since = now.getUTCFullYear() - 10;
+  const [strong, general] = await Promise.allSettled([
+    esearch(`(${term}) AND ${STRONG_FILTER} AND ("${since}"[dp] : "3000"[dp])`, strongCount, common, fetchImpl),
+    esearch(term, 10, common, fetchImpl),
+  ]);
+  if (general.status === 'rejected') throw general.reason; // no baseline results: report the failure
+  const strongIds = strong.status === 'fulfilled' ? strong.value : []; // the extra pass is best effort
+  const ids = [...new Set([...strongIds, ...general.value])];
   if (!ids.length) return [];
   const fetchUrl = `${EUTILS}/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=${ids.join(',')}&${common}`;
   const fres = await getWithRetry(fetchUrl, fetchImpl);
   const articles = parseArticles(await fres.text());
-  // Keep PubMed's relevance order.
-  articles.sort((a, b) => ids.indexOf(a.pmid) - ids.indexOf(b.pmid));
+  // Stronger evidence first (in PubMed's relevance order), then everything else in relevance order.
+  const rank = (a) => ids.indexOf(a.pmid) + (strongIds.includes(a.pmid) ? 0 : 1000);
+  articles.sort((a, b) => rank(a) - rank(b));
   return articles.slice(0, maxArticles);
 }

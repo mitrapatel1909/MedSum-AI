@@ -57,26 +57,44 @@ function parseArticles(xml) {
 }
 async function getWithRetry(url, fetchImpl) {
   let lastStatus = 0;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const waits = [700, 1600];
+  for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetchImpl(url, { signal: AbortSignal.timeout(15e3), headers: { "User-Agent": "MedSumAI/1.0 (https://medsumai.com)" } });
     if (res.ok) return res;
     lastStatus = res.status;
     if (res.status !== 429 && res.status < 500) break;
-    await new Promise((r) => setTimeout(r, 800));
+    if (attempt < waits.length) await new Promise((r) => setTimeout(r, waits[attempt] + Math.floor(Math.random() * 300)));
   }
   throw new Error(`PubMed request failed (${lastStatus})`);
 }
-async function searchPubMed(topic, { fetchImpl = fetch, apiKey, retmax = 10, maxArticles = 8 } = {}) {
+var STRONG_FILTER = "(meta-analysis[pt] OR systematic review[pt] OR randomized controlled trial[pt])";
+function cleanTerm(topic) {
+  return topic.replace(/[\[\]()]/g, " ").replace(/\s+/g, " ").trim();
+}
+async function esearch(term, retmax, common, fetchImpl) {
+  const url = `${EUTILS}/esearch.fcgi?db=pubmed&retmode=json&sort=relevance&retmax=${retmax}&term=${encodeURIComponent(term)}&${common}`;
+  const res = await getWithRetry(url, fetchImpl);
+  const json2 = await res.json();
+  return json2 && json2.esearchresult && json2.esearchresult.idlist || [];
+}
+async function searchPubMed(topic, { fetchImpl = (...a) => fetch(...a), apiKey, maxArticles = 8, strongCount = 4, now = /* @__PURE__ */ new Date() } = {}) {
   const common = `tool=medsumai&email=${encodeURIComponent("hello@medsumai.com")}${apiKey ? `&api_key=${encodeURIComponent(apiKey)}` : ""}`;
-  const searchUrl = `${EUTILS}/esearch.fcgi?db=pubmed&retmode=json&sort=relevance&retmax=${retmax}&term=${encodeURIComponent(topic)}&${common}`;
-  const sres = await getWithRetry(searchUrl, fetchImpl);
-  const sjson = await sres.json();
-  const ids = sjson && sjson.esearchresult && sjson.esearchresult.idlist || [];
+  const term = cleanTerm(topic);
+  if (!term) return [];
+  const since = now.getUTCFullYear() - 10;
+  const [strong, general] = await Promise.allSettled([
+    esearch(`(${term}) AND ${STRONG_FILTER} AND ("${since}"[dp] : "3000"[dp])`, strongCount, common, fetchImpl),
+    esearch(term, 10, common, fetchImpl)
+  ]);
+  if (general.status === "rejected") throw general.reason;
+  const strongIds = strong.status === "fulfilled" ? strong.value : [];
+  const ids = [.../* @__PURE__ */ new Set([...strongIds, ...general.value])];
   if (!ids.length) return [];
   const fetchUrl = `${EUTILS}/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=${ids.join(",")}&${common}`;
   const fres = await getWithRetry(fetchUrl, fetchImpl);
   const articles = parseArticles(await fres.text());
-  articles.sort((a, b) => ids.indexOf(a.pmid) - ids.indexOf(b.pmid));
+  const rank = (a) => ids.indexOf(a.pmid) + (strongIds.includes(a.pmid) ? 0 : 1e3);
+  articles.sort((a, b) => rank(a) - rank(b));
   return articles.slice(0, maxArticles);
 }
 
@@ -95,6 +113,9 @@ Rules you must follow:
 - Cite every factual claim with the PMID of the supporting article in this exact form: [PMID 12345678]. One PMID per bracket. Only cite PMIDs that appear in <articles>.
 - Never give personal medical advice, diagnoses, or treatment recommendations. You explain research; you do not tell anyone what to do about their health.
 - Be honest about uncertainty: say when evidence is limited, mixed, preliminary, or from animal/cell studies.
+- Give the most weight to meta-analyses, systematic reviews and randomized trials (each <article> has a type attribute). Narrative reviews and observational studies show associations and background; say so rather than presenting them as proof.
+- If the abstracts do not actually address the topic the reader asked about, say so plainly at the start instead of summarizing unrelated findings.
+- If no <article> is a trial, meta-analysis or systematic review, say clearly in the evidence section that this answer rests on background reviews and individual studies, not pooled or trial evidence.
 
 Write in Markdown with exactly these sections, in this order:
 
@@ -158,18 +179,31 @@ function linkCitations(text, articles) {
     return kept.length ? kept.map(link).join(" ") : "";
   }).replace(/[ \t]+([.,;:])/g, "$1");
 }
+function pluralize(label) {
+  if (/y$/.test(label)) return label.slice(0, -1) + "ies";
+  if (/is$/.test(label)) return label.slice(0, -2) + "es";
+  return label + "s";
+}
 function evidenceLine(articles) {
   const counts = {};
   for (const a of articles) counts[a.studyType] = (counts[a.studyType] || 0) + 1;
-  const parts = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${k.toLowerCase()}${n > 1 ? "s" : ""}`);
+  const parts = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${n > 1 ? pluralize(k.toLowerCase()) : k.toLowerCase()}`);
   return `Based on ${articles.length} PubMed abstract${articles.length > 1 ? "s" : ""}: ${parts.join(", ")}. Abstracts only, not full papers.`;
+}
+var POOLED = /* @__PURE__ */ new Set(["Meta-analysis", "Systematic review"]);
+var TRIALS = /* @__PURE__ */ new Set(["Randomized controlled trial", "Clinical trial"]);
+function evidenceNote(articles) {
+  const types = articles.map((a) => a.studyType);
+  if (types.some((t) => POOLED.has(t))) return "Includes pooled evidence (a meta-analysis or systematic review).";
+  if (types.some((t) => TRIALS.has(t))) return "Includes clinical trials, but no pooled analysis.";
+  return "No trials or pooled analyses among these abstracts: treat this as background, not proof.";
 }
 function sourcesSection(articles) {
   const lines = articles.map(
     (a, i) => `${i + 1}. ${a.title} *${a.journal}${a.year ? `, ${a.year}` : ""}* \xB7 ${a.studyType} \xB7 [PubMed](${a.url})`
   );
   return `## Sources
-${evidenceLine(articles)}
+${evidenceLine(articles)} ${evidenceNote(articles)}
 
 ${lines.join("\n")}`;
 }
