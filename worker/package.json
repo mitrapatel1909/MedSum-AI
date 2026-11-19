@@ -1,0 +1,9 @@
+{
+  "name": "medsumai-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "build": "npx --yes esbuild src/index.js --bundle --format=esm --target=es2022 --outfile=dist/worker.js"
+  }
+}
