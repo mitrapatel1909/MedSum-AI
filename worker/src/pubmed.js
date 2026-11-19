@@ -125,3 +125,32 @@ export async function searchPubMed(topic, { fetchImpl = (...a) => fetch(...a), a
   articles.sort((a, b) => rank(a) - rank(b));
   return articles.slice(0, maxArticles);
 }
+
+// Paste-a-paper input: a PubMed link, a bare PMID, or a DOI (bare, doi: prefix, or doi.org link).
+export function parseInput(text) {
+  const t = String(text || '').trim();
+  if (!t || t.length > 300) return null;
+  let m = t.match(/^(?:https?:\/\/)?(?:www\.)?(?:pubmed\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov\/pubmed)\/(\d{1,9})(?:[/?#].*)?$/i);
+  if (m) return { kind: 'pmid', value: m[1] };
+  m = t.match(/^(?:PMID:?\s*)?(\d{1,9})$/i);
+  if (m) return { kind: 'pmid', value: m[1] };
+  m = t.match(/^(?:(?:https?:\/\/)?(?:dx\.)?doi\.org\/|doi:\s*)?(10\.\d{4,9}\/[^\s"<>]+?)[.,;)]*$/i);
+  if (m) return { kind: 'doi', value: decodeURIComponent(m[1]).replace(/["\\]/g, '') };
+  return null;
+}
+
+// Returns { article } or { reason: 'not_found' | 'no_abstract' }.
+export async function fetchPaper(input, { fetchImpl = (...a) => fetch(...a), apiKey } = {}) {
+  const common = `tool=medsumai&email=${encodeURIComponent('hello@medsumai.com')}${apiKey ? `&api_key=${encodeURIComponent(apiKey)}` : ''}`;
+  let pmid = input.kind === 'pmid' ? input.value : null;
+  if (!pmid) {
+    const ids = await esearch(`"${input.value}"[AID]`, 1, common, fetchImpl);
+    pmid = ids[0];
+  }
+  if (!pmid) return { reason: 'not_found' };
+  const res = await getWithRetry(`${EUTILS}/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=${pmid}&${common}`, fetchImpl);
+  const xml = await res.text();
+  const [article] = parseArticles(xml);
+  if (article) return { article };
+  return { reason: /<PubmedArticle[\s>]/.test(xml) ? 'no_abstract' : 'not_found' };
+}

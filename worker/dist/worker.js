@@ -97,6 +97,31 @@ async function searchPubMed(topic, { fetchImpl = (...a) => fetch(...a), apiKey, 
   articles.sort((a, b) => rank(a) - rank(b));
   return articles.slice(0, maxArticles);
 }
+function parseInput(text) {
+  const t = String(text || "").trim();
+  if (!t || t.length > 300) return null;
+  let m = t.match(/^(?:https?:\/\/)?(?:www\.)?(?:pubmed\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov\/pubmed)\/(\d{1,9})(?:[/?#].*)?$/i);
+  if (m) return { kind: "pmid", value: m[1] };
+  m = t.match(/^(?:PMID:?\s*)?(\d{1,9})$/i);
+  if (m) return { kind: "pmid", value: m[1] };
+  m = t.match(/^(?:(?:https?:\/\/)?(?:dx\.)?doi\.org\/|doi:\s*)?(10\.\d{4,9}\/[^\s"<>]+?)[.,;)]*$/i);
+  if (m) return { kind: "doi", value: decodeURIComponent(m[1]).replace(/["\\]/g, "") };
+  return null;
+}
+async function fetchPaper(input, { fetchImpl = (...a) => fetch(...a), apiKey } = {}) {
+  const common = `tool=medsumai&email=${encodeURIComponent("hello@medsumai.com")}${apiKey ? `&api_key=${encodeURIComponent(apiKey)}` : ""}`;
+  let pmid = input.kind === "pmid" ? input.value : null;
+  if (!pmid) {
+    const ids = await esearch(`"${input.value}"[AID]`, 1, common, fetchImpl);
+    pmid = ids[0];
+  }
+  if (!pmid) return { reason: "not_found" };
+  const res = await getWithRetry(`${EUTILS}/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=${pmid}&${common}`, fetchImpl);
+  const xml = await res.text();
+  const [article] = parseArticles(xml);
+  if (article) return { article };
+  return { reason: /<PubmedArticle[\s>]/.test(xml) ? "no_abstract" : "not_found" };
+}
 
 // src/prompt.js
 var LEVELS = {
@@ -327,7 +352,8 @@ async function callOpenAI(env, messages, maxTokens, fetchImpl = fetch) {
 async function handleSummarize(request, env, deps) {
   const { body, error } = await readBody(request);
   if (error) return json(request, 400, { error });
-  const topic = validTopic(body.topic);
+  const paper = typeof body.topic === "string" ? parseInput(body.topic) : null;
+  const topic = paper ? "one specific paper" : validTopic(body.topic);
   if (!topic) return json(request, 400, { error: "Please enter a medical or biology topic (3 to 200 characters)." });
   const level = Object.hasOwn(LEVELS, body.level) ? body.level : DEFAULT_LEVEL;
   const lim = await checkLimits(env, "summarize", await visitorKey(request, env));
@@ -337,7 +363,15 @@ async function handleSummarize(request, env, deps) {
   }
   let articles;
   try {
-    articles = await searchPubMed(topic, { fetchImpl: deps.fetchImpl, apiKey: env.NCBI_API_KEY });
+    if (paper) {
+      const r = await fetchPaper(paper, { fetchImpl: deps.fetchImpl, apiKey: env.NCBI_API_KEY });
+      if (!r.article) {
+        return markdown(request, r.reason === "no_abstract" ? "## No abstract available\nThat paper is on PubMed but has no abstract, and MedSumAI only summarizes abstracts. Try searching its topic instead." : "## Paper not found\nI could not find that paper on PubMed. Check the PMID, DOI or link, or search its topic instead.");
+      }
+      articles = [r.article];
+    } else {
+      articles = await searchPubMed(topic, { fetchImpl: deps.fetchImpl, apiKey: env.NCBI_API_KEY });
+    }
   } catch {
     return json(request, 502, { error: "PubMed is not responding right now. Please try again shortly." });
   }
@@ -349,7 +383,7 @@ I could not find PubMed abstracts for **${topic.replace(/[*_`<>[\]]/g, "")}**. T
     );
   }
   try {
-    const text = await callOpenAI(env, buildSummaryMessages(topic, articles, level), 1800, deps.fetchImpl);
+    const text = await callOpenAI(env, buildSummaryMessages(paper ? `one specific paper (PMID ${articles[0].pmid}): ${articles[0].title}` : topic, articles, level), 1800, deps.fetchImpl);
     return markdown(request, assembleSummary(text, articles));
   } catch {
     return json(request, 502, { error: "The summarizer is temporarily unavailable. Please try again in a few minutes." });
