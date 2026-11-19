@@ -1,157 +1,63 @@
-# 🧬 MedSumAI
+# MedSumAI
 
-**AI-powered biomedical research summarizer — making scientific literature accessible to everyone.**
+**Medical research, explained simply.** MedSumAI takes any biomedical topic, finds real articles on PubMed, and writes a plain-language summary with links back to the sources. Free to use, no signup needed to search.
 
----
+**Live site:** https://medsumai.com
 
-## 🔍 What is MedSumAI?
+> Educational use only. Summaries are written by AI and can contain mistakes. Always check the linked PubMed sources, and talk to a qualified clinician about health decisions. This is not medical advice.
 
-MedSumAI is an automated research tool that takes any medical or biomedical topic, searches PubMed (the world's largest database of scientific articles), and generates a clear, easy-to-understand summary — complete with citations and direct links to the original articles.
+## What it does
 
-No medical degree required. Just type a topic and get answers.
+- Searches PubMed for a topic and summarizes the abstracts it finds, with a citation link for each article
+- Follow-up chat about the summary you just generated
+- Optional free accounts: save summaries to "My Summaries"
+- Free PDF study guides (immune system, cell biology, genetics) with an optional email signup
+- Light and dark mode
 
----
+## How it is built
 
-## 🌍 Why I Built This
+| Piece | What it does |
+|---|---|
+| Static site (`index.html`, `privacy.html`, `news.html`) | The whole frontend: plain HTML, CSS and JavaScript, no build step |
+| GitHub Pages + Cloudflare | Hosting and the `medsumai.com` domain |
+| n8n on Railway | Backend webhooks: PubMed search, article fetch, then an OpenAI model (currently GPT-5-Mini) writes the summary |
+| Supabase | Accounts (Auth), saved summaries, the public summary counter, mailing list |
+| Cloudflare Web Analytics | Cookieless visit statistics |
 
-Every year, millions of scientific articles are published on PubMed. But most people — students, patients, caregivers, and even researchers outside a specific field — can't easily access or understand them. The language is technical, the search process is tedious, and making sense of multiple papers at once is time-consuming.
-
-**MedSumAI solves this.** It bridges the gap between cutting-edge medical research and the people who need it most, by automatically finding relevant articles and translating them into plain language.
-
-This tool was built to help:
-- 🎓 **Students** researching topics for science classes or competitions
-- 🔬 **Researchers** who need a fast overview of a new topic
-- 🏥 **Patients and caregivers** trying to understand a diagnosis or treatment
-- 📰 **Anyone** curious about the latest in medical science
-
----
-
-## ⚙️ How It Works
-
-MedSumAI is built as an automated workflow using **n8n**, a powerful open-source automation platform. Here's the step-by-step flow:
+### Request flow
 
 ```
-User types a topic
-       ↓
-Search PubMed for relevant article IDs
-       ↓
-Fetch full article details from PubMed API
-       ↓
-Extract abstracts, titles, authors & links
-       ↓
-Send all articles to GPT-4o-mini for summarization
-       ↓
-Output a clear summary with citations in HTML/Markdown
+Browser ── topic ──► n8n webhook ─► PubMed search ─► fetch abstracts ─► OpenAI summary ─► Markdown
+Browser ◄── summary (rendered with marked + DOMPurify) ◄────────────────────────────────┘
+Browser ── record_search(topic) ──► Supabase (server-side counter and log)
 ```
 
-### Workflow Nodes
-| Step | Tool | Purpose |
-|------|------|---------|
-| 1 | Edit Fields | User inputs their research topic |
-| 2 | HTTP Request | Search PubMed for matching article IDs |
-| 3 | HTTP Request | Fetch article details from PubMed |
-| 4 | HTTP Request | Fetch full article data (abstracts, metadata) |
-| 5 | XML to JSON | Parse PubMed's XML response |
-| 6 | Code (JavaScript) | Extract title, authors, abstract, PMID & build links |
-| 7 | GPT-4o-mini | Generate a plain-language summary with references |
-| 8 | Markdown to HTML | Format the final output |
+## Database and security
 
----
+The browser only talks to Supabase through the public anon key, so everything it can reach has to be safe to expose:
 
-## 🌐 Live Demo
+- `saved_summaries`: row-level security, each user can only see and change their own rows
+- `searches`, `search_stats`, `subscriptions`, `usage_limits`: **no direct access** from the browser. The site uses three narrow, validated, rate-limited functions instead: `record_search`, `get_search_count` and `subscribe`
+- Rate limiting identifies visitors by a salted hash of their IP address (never the raw address), and expired entries are deleted automatically
 
-👉 **[Try MedSumAI Live](https://mitrapatel1909.github.io/MedSumAI)**
+The SQL lives in [`supabase/migrations`](supabase/migrations) and is meant to be applied in order. Migration `002` removes the old open table access and must only be applied once the frontend that uses the functions is live.
 
----
+## Known limitations
 
-## 🚀 Features
+- **The n8n webhook URLs are public and unauthenticated** (they are visible in the page source). Anyone can call them directly. Fixing this means moving the backend behind a small authenticated, rate-limited proxy (for example a Cloudflare Worker).
+- **The Daily Feed (`news.html`) is paused.** It reads `news.json` from this repo, which the old n8n workflow wrote and is no longer being generated. The page shows a "taking a break" message and is set to `noindex`. When the generator is running again, remove the `noindex` meta tag in `news.html`, add the page back to `sitemap.xml`, and re-add the link in the site header.
+- Summaries use abstracts only, not full papers, and are not graded for study quality.
 
-- 🔎 **Live PubMed search** — always pulls the most recent articles
-- 🤖 **AI-generated summaries** — powered by GPT-4o-mini
-- 📚 **Full citations** — every summary includes article titles, authors, and direct PubMed links
-- 🗣️ **Plain language output** — written for non-experts
-- ⚡ **Fast** — results in seconds
+## Settings to check outside this repo
 
----
+- Supabase → Authentication → URL configuration: `https://medsumai.com` should be in the redirect allow-list
+- Supabase → Authentication → password protection: enable leaked-password protection
+- n8n webhook CORS: allow `https://medsumai.com`
 
-## 🛠️ Tech Stack
+## Running it locally
 
-- **n8n** — workflow automation
-- **PubMed E-utilities API** — free, open access to biomedical literature
-- **OpenAI GPT-4o-mini** — AI summarization
-- **JavaScript** — data parsing and transformation
-- **Markdown / HTML** — output formatting
+There is no build step. Serve the folder with any static server (for example `python3 -m http.server`) and open `index.html`. Search needs the live backend, so it will only work if the n8n webhooks are reachable.
 
----
+## Notes
 
-## 📋 How to Use
-
-1. Open the n8n workflow
-2. Click **"Execute Workflow"**
-3. Type your research topic in the **Edit Fields** node (e.g. `CRISPR cancer therapy`, `Alzheimer's early detection`, `COVID-19 long term effects`)
-4. Wait a few seconds
-5. Read your AI-generated summary with full citations
-
----
-
-## 💡 Real-World Impact
-
-Access to medical knowledge shouldn't require a PhD. MedSumAI democratizes access to scientific research by:
-
-- Reducing the time to understand a new medical topic from **hours to seconds**
-- Making PubMed's 35+ million articles accessible to **non-experts**
-- Helping students and researchers **stay current** with the latest findings
-- Providing **verified, cited sources** — not just generic AI responses
-
----
-
-## 📁 Project Structure
-
-```
-MedSumAI/
-├── README.md               # This file
-├── workflow/
-│   └── MedSumAI.json       # n8n workflow export
-└── screenshots/
-    └── workflow.png        # Workflow diagram
-```
-
----
-
-## 🔧 Setup & Installation
-
-### Prerequisites
-- [n8n](https://n8n.io/) (self-hosted or cloud)
-- OpenAI API key
-- No PubMed API key needed (free public access)
-
-### Steps
-1. Clone this repository
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/MedSumAI.git
-   ```
-2. Import `workflow/MedSumAI.json` into your n8n instance
-3. Add your OpenAI API key in the **"Message a Model"** node credentials
-4. Click **Execute Workflow** and start researching!
-
----
-
-## 🔄 Workflow
-
-![MedSumAI Workflow](workflow.png)
-
-## 🙋 About
-
-Built by a high school student passionate about making science more accessible. MedSumAI started as a personal project to quickly research biomedical topics for school, and grew into a fully automated research assistant.
-
-GitHub: [@mitrapatel1909](https://github.com/mitrapatel1909)
-
----
-
-## 📄 License
-
-MIT License — free to use, modify, and share.
-
----
-
-*Powered by the [PubMed E-utilities API](https://www.ncbi.nlm.nih.gov/home/develop/api/) and [OpenAI](https://openai.com/)*
+The GitHub repository is named `MedSum-AI` (with a hyphen); the product is MedSumAI (no hyphen). Mixing the two up has broken links before, so check which one a URL needs before editing it.
