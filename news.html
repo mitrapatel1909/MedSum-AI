@@ -3,13 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#2d6a4f"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <link rel="icon" href="/favicon.ico" sizes="32x32"/>
   <title>MedSumAI — Daily Research Feed</title>
-  <meta name="description" content="Daily AI-powered research summaries across 10 medical categories, sourced from the latest PubMed research. Free, citation-backed, updated daily."/>
-  <link rel="canonical" href="https://mitrapatel1909.github.io/MedSum-AI/news.html"/>
+  <meta name="description" content="Daily AI-powered research summaries across 10 medical categories, sourced from the latest PubMed research. Free and citation-backed."/>
+  <!-- The daily feed generator is not running, so keep this page out of search results.
+       Remove the next line once news.json is being generated again. -->
+  <meta name="robots" content="noindex, follow"/>
+  <link rel="canonical" href="https://medsumai.com/news.html"/>
   <meta property="og:type" content="website"/>
   <meta property="og:title" content="MedSumAI — Daily Research Feed"/>
   <meta property="og:description" content="Daily AI-powered summaries across 10 medical categories, sourced from the latest PubMed research."/>
-  <meta property="og:url" content="https://mitrapatel1909.github.io/MedSum-AI/news.html"/>
+  <meta property="og:url" content="https://medsumai.com/news.html"/>
   <meta property="og:site_name" content="MedSumAI"/>
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="twitter:title" content="MedSumAI — Daily Research Feed"/>
@@ -19,12 +25,12 @@
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     "name": "MedSumAI Daily Research Feed",
-    "url": "https://mitrapatel1909.github.io/MedSum-AI/news.html",
+    "url": "https://medsumai.com/news.html",
     "description": "Daily AI-powered summaries across 10 medical categories, sourced from the latest PubMed research.",
     "isPartOf": {
       "@type": "WebSite",
       "name": "MedSumAI",
-      "url": "https://mitrapatel1909.github.io/MedSum-AI/"
+      "url": "https://medsumai.com/"
     }
   }
   </script>
@@ -302,7 +308,7 @@
 </main>
 
 <footer>
-  <div>Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a> & GPT · Updated daily</div>
+  <div>Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a> & GPT</div>
   <div><a href="index.html">← Back to Research Tool</a></div>
 </footer>
 
@@ -340,6 +346,7 @@
   async function loadFeed() {
     try {
       const res = await fetch(GITHUB_RAW_URL + '?t=' + Date.now());
+      if (!res.ok) { showPaused(); return; }
       const data = await res.json();
       if (!data.categories || data.categories.length === 0) { showEmpty(); return; }
       document.getElementById('feedDate').textContent = data.date || 'Today';
@@ -383,20 +390,20 @@
   }
 
   function showEmpty() {
-    document.getElementById('feedDate').textContent = 'Not yet generated';
-    document.getElementById('feedContent').innerHTML = `
-      <div class="error-state">
-        <h3>No feed yet.</h3>
-        <p>Run the n8n workflow to generate today's research digest.</p>
-      </div>
-    `;
+    showPaused();
   }
 
   function showError() {
+    showPaused();
+  }
+
+  // Visitor-facing message when the feed file is missing or empty.
+  function showPaused() {
+    document.getElementById('feedDate').textContent = 'Paused';
     document.getElementById('feedContent').innerHTML = `
       <div class="error-state">
-        <h3>Could not load feed.</h3>
-        <p>Make sure news.json exists in your GitHub repo.</p>
+        <h3>The daily feed is taking a break.</h3>
+        <p>We're rebuilding it. In the meantime, <a href="index.html">search any topic</a> for a cited summary.</p>
       </div>
     `;
   }

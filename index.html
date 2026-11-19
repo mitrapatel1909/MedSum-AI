@@ -3,24 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#2d6a4f"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <link rel="icon" href="/favicon.ico" sizes="32x32"/>
   <title>MedSumAI — Biomedical Research Summarizer</title>
   <meta name="google-site-verification" content="0BtgqbhdfVsy6cblx-28My4q8eTLT5Krnx2RwVRqVQM" />
   <meta name="description" content="MedSumAI turns any biomedical topic into a clear, AI-generated summary sourced from real PubMed articles — complete with citations and links to the original research. No medical degree required."/>
-  <link rel="canonical" href="https://mitrapatel1909.github.io/MedSum-AI/"/>
+  <link rel="canonical" href="https://medsumai.com/"/>
   <meta property="og:type" content="website"/>
   <meta property="og:title" content="MedSumAI — Biomedical Research Summarizer"/>
   <meta property="og:description" content="Type any biomedical topic and get an AI-generated summary from real PubMed articles — with citations."/>
-  <meta property="og:url" content="https://mitrapatel1909.github.io/MedSum-AI/"/>
+  <meta property="og:url" content="https://medsumai.com/"/>
   <meta property="og:site_name" content="MedSumAI"/>
+  <meta property="og:image" content="https://medsumai.com/og-image.png"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+  <meta property="og:image:alt" content="MedSumAI: medical research, explained simply"/>
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="twitter:title" content="MedSumAI — Biomedical Research Summarizer"/>
   <meta name="twitter:description" content="Type any biomedical topic and get an AI-generated summary from real PubMed articles — with citations."/>
+  <meta name="twitter:image" content="https://medsumai.com/og-image.png"/>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "MedSumAI",
-    "url": "https://mitrapatel1909.github.io/MedSum-AI/",
+    "url": "https://medsumai.com/",
     "description": "MedSumAI turns any biomedical topic into a clear, AI-generated summary sourced from real PubMed articles, complete with citations and direct links to the original research.",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "Any",
@@ -501,10 +509,24 @@
       .faq-question { padding: 1rem 1.1rem; font-size: 0.9rem; }
       .faq-answer-inner { padding: 0 1.1rem 1rem; }
     }
+
+    /* ── Accessibility, trust and study-guide additions ── */
+    .skip-link { position: absolute; left: -9999px; top: 0; background: var(--accent); color: #fff; padding: 0.6rem 1rem; border-radius: 0 0 8px 0; z-index: 200; font-size: 0.85rem; text-decoration: none; }
+    .skip-link:focus { left: 0; }
+    :focus-visible { outline: 2px solid var(--accent) !important; outline-offset: 2px; }
+    #resultBox:focus { outline: none !important; }
+    .result-disclaimer { padding: 0.9rem 2rem; border-top: 1px solid var(--border); font-size: 0.78rem; line-height: 1.55; color: var(--muted); }
+    .guide-skip { display: block; width: 100%; margin-top: 0.75rem; background: none; border: none; color: var(--muted); font-size: 0.82rem; font-family: 'DM Sans', sans-serif; text-decoration: underline; cursor: pointer; }
+    .guide-skip:hover { color: var(--accent); }
+    @media (max-width: 640px) { .result-disclaimer { padding: 0.9rem 1.25rem; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+    }
   </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "835baa76f907492a9ff87f734a9e47fe"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to main content</a>
 
 <header>
   <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -512,10 +534,9 @@
     <div class="tagline" style="margin-bottom:0;">Biomedical Research Summarizer</div>
   </div>
   <nav style="display:flex; align-items:center; gap:1.5rem; margin-left:auto;">
-    <a href="news.html" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Daily Feed</a>
     <a href="#shop" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Study Guides</a>
     <a href="#" id="myLibraryLink" onclick="openLibrary(); return false;" style="display:none; font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">My Summaries</a>
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
     <div class="user-menu" id="userMenu">
       <button class="user-btn" onclick="showModal('login')">Log in</button>
       <button class="user-btn primary" onclick="showModal('signup')">Sign up</button>
@@ -523,16 +544,16 @@
   </nav>
 </header>
  
-<main>
+<main id="main">
   <div class="hero">
     <div class="hero-orbit">
-      <svg viewBox="0 0 340 340">
+      <svg viewBox="0 0 340 340" aria-hidden="true">
         <defs>
           <path id="orbitPath" d="M 170,20 A 150,150 0 1,1 169.99,20" fill="none"/>
         </defs>
         <text>
           <textPath href="#orbitPath">
-            PUBMED ✦ AI SUMMARIES ✦ CITED SOURCES ✦ 35M+ ARTICLES ✦ DAILY FEED ✦ GPT POWERED ✦ FREE GUIDES ✦
+            PUBMED ✦ AI SUMMARIES ✦ CITED SOURCES ✦ 35M+ ARTICLES ✦ FREE TO USE ✦ GPT POWERED ✦ FREE GUIDES ✦
           </textPath>
         </text>
       </svg>
@@ -545,16 +566,16 @@
  
   <div class="stats-bar">
     <div class="stat-item">
-      <div class="stat-number" id="statSearches">—</div>
-      <div class="stat-label">Summaries Generated</div>
+      <div class="stat-number">Free</div>
+      <div class="stat-label">No signup to search</div>
     </div>
     <div class="stat-item">
       <div class="stat-number">35M+</div>
       <div class="stat-label">PubMed Articles</div>
     </div>
-    <div class="stat-item">
-      <div class="stat-number" id="statUsers">—</div>
-      <div class="stat-label">Researchers Helped</div>
+    <div class="stat-item" id="statSearchesItem" style="display:none">
+      <div class="stat-number" id="statSearches">—</div>
+      <div class="stat-label">Summaries Generated</div>
     </div>
   </div>
  
@@ -641,7 +662,7 @@
     </div>
   </div>
  
-  <div class="loading" id="loading">
+  <div class="loading" id="loading" role="status" aria-live="polite">
     <div class="dna-loader"><span></span><span></span><span></span><span></span><span></span></div>
     <div class="loading-text">Searching PubMed...</div>
     <div class="loading-steps">
@@ -652,9 +673,9 @@
     </div>
   </div>
  
-  <div class="error-box" id="errorBox"></div>
+  <div class="error-box" id="errorBox" role="alert"></div>
  
-  <div class="result-box" id="resultBox">
+  <div class="result-box" id="resultBox" tabindex="-1">
     <div class="result-header">
       <div class="result-header-left">
         <div class="result-dot"></div>
@@ -667,13 +688,14 @@
       </div>
     </div>
     <div class="result-content" id="resultContent"></div>
+    <div class="result-disclaimer">Educational summary of published research, written by AI. It can contain mistakes, so check the linked PubMed sources. This is not medical advice; talk to a qualified clinician about health decisions.</div>
   </div>
  
   <div class="chat-box" id="chatBox">
     <div class="chat-header">💬 Follow-up Questions</div>
-    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
     <div class="chat-input-row">
-      <input type="text" id="chatInput" placeholder="Ask a follow-up question..." />
+      <input type="text" id="chatInput" placeholder="Ask a follow-up question..." aria-label="Ask a follow-up question" />
       <button onclick="sendChat()">Send</button>
     </div>
   </div>
@@ -681,8 +703,8 @@
  
 <!-- Auth Modal -->
 <div class="modal-overlay" id="authModal">
-  <div class="modal">
-    <button class="modal-close" onclick="hideModal()">✕</button>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-close" aria-label="Close" onclick="hideModal()">✕</button>
     <a class="modal-back" id="modalBack" onclick="switchTab('login')" style="display:none">← Back to log in</a>
     <div class="modal-title" id="modalTitle">Welcome back</div>
     <div class="modal-sub" id="modalSub">Log in to save your summaries</div>
@@ -691,9 +713,9 @@
       <button class="modal-tab" id="signupTab" onclick="switchTab('signup')">Sign up</button>
     </div>
     <div class="modal-error" id="modalError"></div>
-    <input type="email" id="authEmail" placeholder="Email address" autocomplete="email" />
-    <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password" />
-    <input type="password" id="authPasswordConfirm" placeholder="Confirm password" autocomplete="new-password" style="display:none" />
+    <input type="email" id="authEmail" aria-label="Email address" placeholder="Email address" autocomplete="email" />
+    <input type="password" id="authPassword" aria-label="Password" placeholder="Password" autocomplete="current-password" />
+    <input type="password" id="authPasswordConfirm" aria-label="Confirm password" placeholder="Confirm password" autocomplete="new-password" style="display:none" />
     <div class="modal-hint" id="passwordHint" style="display:none">At least 6 characters</div>
     <div class="modal-forgot" id="forgotRow"><a onclick="switchTab('forgot')">Forgot password?</a></div>
     <button class="modal-btn" id="authSubmitBtn" onclick="handleAuth()">Log in</button>
@@ -703,8 +725,8 @@
 
 <!-- Library Modal -->
 <div class="modal-overlay" id="libraryModal">
-  <div class="modal" style="width:600px; max-width:92vw; max-height:82vh; display:flex; flex-direction:column;">
-    <button class="modal-close" onclick="closeLibrary()">✕</button>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="My Summaries" style="width:600px; max-width:92vw; max-height:82vh; display:flex; flex-direction:column;">
+    <button class="modal-close" aria-label="Close" onclick="closeLibrary()">✕</button>
     <div class="modal-title">My Summaries</div>
     <div class="modal-sub" id="librarySub">Your saved research summaries</div>
     <div id="libraryList" style="overflow-y:auto; flex:1; margin:0 -0.5rem; padding:0 0.5rem;">
@@ -715,8 +737,8 @@
 
 <!-- Library Item Viewer -->
 <div class="modal-overlay" id="libraryViewModal">
-  <div class="modal" style="width:640px; max-width:92vw; max-height:82vh; display:flex; flex-direction:column;">
-    <button class="modal-close" onclick="closeLibraryView()">✕</button>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Saved summary" style="width:640px; max-width:92vw; max-height:82vh; display:flex; flex-direction:column;">
+    <button class="modal-close" aria-label="Close" onclick="closeLibraryView()">✕</button>
     <a class="modal-back" onclick="closeLibraryView(); openLibrary();" style="display:inline-block; margin-bottom:0.5rem;">← Back to My Summaries</a>
     <div class="modal-title" id="libraryViewTopic" style="font-size:1.25rem;"></div>
     <div class="modal-sub" id="libraryViewDate"></div>
@@ -728,8 +750,21 @@
   </div>
 </div>
  
+<!-- Study Guide Modal -->
+<div class="modal-overlay" id="guideModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+    <button class="modal-close" aria-label="Close" onclick="closeGuide()">✕</button>
+    <div class="modal-title" id="guideTitle">Get the study guide</div>
+    <div class="modal-sub">It's a free PDF. Add your email if you'd like new guides and updates; it's optional.</div>
+    <div class="modal-error" id="guideError" role="alert"></div>
+    <input type="email" id="guideEmail" placeholder="your@email.com" autocomplete="email" aria-label="Email address (optional)" />
+    <button class="modal-btn" id="guideSubmitBtn" onclick="confirmGuide(true)">Download &amp; join the mailing list</button>
+    <button class="guide-skip" onclick="confirmGuide(false)">No thanks, just download</button>
+  </div>
+</div>
+
 <!-- Marquee Ticker -->
-<div class="marquee">
+<div class="marquee" aria-hidden="true">
   <div class="marquee-track" id="marqueeTrack">
     <span class="marquee-item">PubMed-Backed</span>
     <span class="marquee-sep">✦</span>
@@ -751,7 +786,7 @@
 </div>
  
 <!-- Scroll Text Path -->
-<div class="scroll-text-section" id="scrollTextSection">
+<div class="scroll-text-section" id="scrollTextSection" aria-hidden="true">
   <svg viewBox="0 0 1000 80" preserveAspectRatio="none">
     <defs>
       <path id="scrollCurve" d="M 40 50 Q 260 -10, 500 50 T 960 50" fill="none"/>
@@ -781,7 +816,7 @@
         <h3 class="shop-card-title">Immune System</h3>
         <p class="shop-card-desc">Innate to adaptive immunity, antibodies, vaccines, autoimmune diseases, and how your body fights infections. Includes key terms and practice questions.</p>
         <div class="shop-card-footer">
-          <button class="buy-btn" onclick="buyGuide('https://drive.google.com/file/d/1iFfKYDbWQ6l0fSwrTuUd_IdjnBKwZ_nw/view?usp=sharing')">Download PDF →</button>
+          <button class="buy-btn" onclick="openGuide('https://drive.google.com/file/d/1iFfKYDbWQ6l0fSwrTuUd_IdjnBKwZ_nw/view?usp=sharing','Immune System')">Download PDF →</button>
         </div>
       </div>
       <div class="shop-card">
@@ -792,7 +827,7 @@
         <h3 class="shop-card-title">Cell Biology</h3>
         <p class="shop-card-desc">Cell structure, organelles, division, signaling pathways, and metabolism. Covers mitosis, meiosis, apoptosis, and cell communication with visual summaries.</p>
         <div class="shop-card-footer">
-          <button class="buy-btn" onclick="buyGuide('https://drive.google.com/file/d/1vFxaEZT1kjyDlNfGPmv57YaI5Khf8KVG/view?usp=sharing')">Download PDF →</button>
+          <button class="buy-btn" onclick="openGuide('https://drive.google.com/file/d/1vFxaEZT1kjyDlNfGPmv57YaI5Khf8KVG/view?usp=sharing','Cell Biology')">Download PDF →</button>
         </div>
       </div>
       <div class="shop-card">
@@ -803,7 +838,7 @@
         <h3 class="shop-card-title">Genetics</h3>
         <p class="shop-card-desc">DNA replication, transcription, translation, inheritance patterns, mutations, and genetic diseases. Includes pedigree analysis, CRISPR basics, and pharmacogenomics.</p>
         <div class="shop-card-footer">
-          <button class="buy-btn" onclick="buyGuide('https://drive.google.com/file/d/1oAIubohZ8_EwE_JTuNxA39Q3qq4ph4tc/view?usp=sharing')">Download PDF →</button>
+          <button class="buy-btn" onclick="openGuide('https://drive.google.com/file/d/1oAIubohZ8_EwE_JTuNxA39Q3qq4ph4tc/view?usp=sharing','Genetics')">Download PDF →</button>
         </div>
       </div>
     </div>
@@ -812,9 +847,9 @@
  
 <!-- Subscribe Bar -->
 <div class="subscribe-bar">
-  <p><strong>Get daily medical research delivered to your inbox.</strong> Subscribe to the MedSumAI digest.</p>
+  <p><strong>Get new study guides and updates by email.</strong> Join the MedSumAI mailing list.</p>
   <div class="subscribe-input-row">
-    <input type="email" id="subscribeEmail" placeholder="your@email.com" />
+    <input type="email" id="subscribeEmail" placeholder="your@email.com" aria-label="Email address" />
     <button class="subscribe-btn" onclick="subscribe()">Subscribe →</button>
   </div>
 </div>
@@ -847,7 +882,7 @@
           Is MedSumAI free?
           <span class="faq-icon">+</span>
         </button>
-        <div class="faq-answer"><div class="faq-answer-inner">Yes — searching topics, reading summaries, using the follow-up chat, and browsing the daily feed are all completely free, no account required. Creating a free account lets you save summaries to revisit later. The study guide PDFs are also free to download.</div></div>
+        <div class="faq-answer"><div class="faq-answer-inner">Yes — searching topics, reading summaries, and using the follow-up chat are all completely free, no account required. Creating a free account lets you save summaries to revisit later. The study guide PDFs are also free to download.</div></div>
       </div>
       <div class="faq-item">
         <button class="faq-question" onclick="toggleFaq(this)">
@@ -889,7 +924,7 @@
 </section>
 
 <footer>
-  Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a> &amp; GPT-5-Mini &nbsp;·&nbsp; Built with n8n &nbsp;·&nbsp; <a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank">GitHub</a> &nbsp;·&nbsp; <a href="privacy.html">Privacy Policy</a>
+  Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a> &amp; GPT-5-Mini &nbsp;·&nbsp; Built with n8n &nbsp;·&nbsp; <a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank">GitHub</a> &nbsp;·&nbsp; <a href="privacy.html">Privacy Policy</a><br><span style="opacity:0.8">For education only. Not medical advice.</span>
 </footer>
  
 <script>
@@ -897,7 +932,7 @@
   const SUPABASE_URL = 'https://tffhaebceqzykfjcolqt.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmZmhhZWJjZXF6eWtmamNvbHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MTk1NDcsImV4cCI6MjA5MTQ5NTU0N30.61IpQevLt7WpxpruVmoTR9a7ov2TSBXVxtCyOtMZuJM';
   // Hardcoded so confirmation/reset emails always land on the real site, regardless of the Supabase dashboard's Site URL setting.
-  const SITE_URL = 'https://mitrapatel1909.github.io/MedSum-AI/';
+  const SITE_URL = 'https://medsumai.com/';
   const SESSION_KEY = 'msai_session';
 
   const sb = {
@@ -910,6 +945,17 @@
       });
       if (!res.ok) throw new Error(await res.text());
       return method === 'GET' ? res.json() : res;
+    },
+    // Calls a Postgres function exposed by Supabase (used for the counter, search log and newsletter).
+    async rpc(fn, args = {}) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(args)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
     },
     async signIn(email, password) {
       const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
@@ -1011,32 +1057,23 @@
     return d.innerHTML;
   }
 
+  // The public summary counter only appears once it is large enough to be meaningful.
+  const STATS_MIN_PUBLIC = 1000;
+  function showSearchCount(n) {
+    if (typeof n !== 'number' || n < STATS_MIN_PUBLIC) return;
+    const label = (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    const num = document.getElementById('statSearches');
+    const item = document.getElementById('statSearchesItem');
+    if (num) num.textContent = label;
+    if (item) item.style.display = '';
+  }
+
   async function loadStats() {
-    try {
-      const data = await sb.query('search_stats', 'GET', null, '?select=total_searches');
-      if (data && data[0]) {
-        const n = data[0].total_searches;
-        document.getElementById('statSearches').textContent = n > 1000 ? (n/1000).toFixed(1) + 'k' : n || '0';
-        document.getElementById('statUsers').textContent = Math.max(1, Math.floor(n * 0.6)) || '—';
-      }
-    } catch (e) {}
+    try { showSearchCount(await sb.rpc('get_search_count')); } catch (e) {}
   }
 
   async function trackSearch(topic) {
-    try {
-      await sb.query('searches', 'POST', { topic });
-      const data = await sb.query('search_stats', 'GET', null, '?select=id,total_searches');
-      if (data && data[0]) {
-        const newCount = data[0].total_searches + 1;
-        await fetch(`${SUPABASE_URL}/rest/v1/search_stats?id=eq.${data[0].id}`, {
-          method: 'PATCH',
-          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ total_searches: newCount })
-        });
-        document.getElementById('statSearches').textContent = newCount > 1000 ? (newCount/1000).toFixed(1) + 'k' : newCount;
-        document.getElementById('statUsers').textContent = Math.max(1, Math.floor(newCount * 0.6));
-      }
-    } catch (e) {}
+    try { showSearchCount(await sb.rpc('record_search', { p_topic: topic })); } catch (e) {}
   }
 
   // authMode: 'login' | 'signup' | 'forgot'
@@ -1400,23 +1437,39 @@
   document.getElementById('libraryViewModal').addEventListener('click', function(e) { if (e.target === this) closeLibraryView(); });
 
   async function subscribe() {
-    const email = document.getElementById('subscribeEmail').value.trim();
+    const input = document.getElementById('subscribeEmail');
+    const email = input.value.trim();
     const btn = document.querySelector('.subscribe-btn');
     if (!email) return;
+    if (!isValidEmail(email)) {
+      btn.textContent = 'Invalid email';
+      setTimeout(() => { btn.textContent = 'Subscribe →'; }, 2500);
+      return;
+    }
     try {
       btn.textContent = 'Subscribing...'; btn.disabled = true;
-      await sb.query('subscriptions', 'POST', { email });
+      await sb.rpc('subscribe', { p_email: email });
       btn.textContent = '✅ Subscribed!';
-      document.getElementById('subscribeEmail').value = '';
+      input.value = '';
       setTimeout(() => { btn.textContent = 'Subscribe →'; btn.disabled = false; }, 3000);
     } catch (e) {
-      btn.textContent = e.message?.includes('duplicate') ? '✅ Already subscribed!' : 'Try again';
+      btn.textContent = String(e.message || '').toLowerCase().includes('too many') ? 'Too many tries' : 'Try again';
       btn.disabled = false;
       setTimeout(() => { btn.textContent = 'Subscribe →'; }, 3000);
     }
   }
 
   document.getElementById('authModal').addEventListener('click', function(e) { if (e.target === this) hideModal(); });
+  document.getElementById('guideModal').addEventListener('click', function(e) { if (e.target === this) closeGuide(); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (document.getElementById('guideModal').classList.contains('visible')) closeGuide();
+    else if (document.getElementById('libraryViewModal').classList.contains('visible')) closeLibraryView();
+    else if (document.getElementById('libraryModal').classList.contains('visible')) closeLibrary();
+    else if (document.getElementById('authModal').classList.contains('visible')) hideModal();
+  });
+  document.getElementById('subscribeEmail').addEventListener('keydown', e => { if (e.key === 'Enter') subscribe(); });
+  document.getElementById('guideEmail').addEventListener('keydown', e => { if (e.key === 'Enter') confirmGuide(true); });
   document.addEventListener('keydown', e => { if (e.key === 'Enter' && document.getElementById('authModal').classList.contains('visible')) handleAuth(); });
   restoreSession();
  
@@ -1445,7 +1498,7 @@
     let i = 0;
     steps.forEach(s => { document.getElementById(s).className = 'loading-step'; });
     loadingInterval = setInterval(() => {
-      if (i > 0) document.getElementById(steps[i-1]).className = 'loading-step done';
+      if (i > 0 && i < steps.length) document.getElementById(steps[i-1]).className = 'loading-step done';
       if (i < steps.length) { document.getElementById(steps[i]).className = 'loading-step active'; i++; }
     }, 1800);
   }
@@ -1457,12 +1510,25 @@
     document.getElementById('searchBtn').textContent = 'Summarize →';
   }
  
+  function friendlyRequestError(err) {
+    const msg = String((err && err.message) || '');
+    if (err && err.name === 'AbortError') return 'This is taking longer than expected. Please try again in a moment.';
+    if (/Server error: 429/.test(msg)) return 'Too many requests right now. Please wait a minute and try again.';
+    if (/Server error: \d+/.test(msg)) return 'The summarizer is temporarily unavailable. Please try again in a few minutes.';
+    return 'Could not connect. Check your internet connection and try again.';
+  }
+
   async function search() {
     const topic = document.getElementById('topicInput').value.trim();
     if (!topic) { document.getElementById('topicInput').focus(); return; }
     showLoading();
     try {
-      const response = await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topic }) });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 90000);
+      let response;
+      try {
+        response = await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topic }), signal: controller.signal });
+      } finally { clearTimeout(timer); }
       if (!response.ok) throw new Error(`Server error: ${response.status}`);
       const html = await response.text();
       trackSearch(topic);
@@ -1477,10 +1543,11 @@
       document.getElementById('chatMessages').innerHTML = '';
       document.getElementById('chatInput').value = '';
       document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('resultBox').focus({ preventScroll: true });
     } catch (err) {
       hideLoading();
       const eb = document.getElementById('errorBox');
-      eb.textContent = '⚠ Could not connect. Please try again in a moment.';
+      eb.textContent = '⚠ ' + friendlyRequestError(err);
       eb.classList.add('visible');
     }
   }
@@ -1512,14 +1579,19 @@
     addChatMsg(question, 'user');
     const typing = addChatMsg('Thinking...', 'ai typing');
     try {
-      const response = await fetch(FOLLOWUP_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, summary: currentSummary }) });
-      if (!response.ok) throw new Error('Error');
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 60000);
+      let response;
+      try {
+        response = await fetch(FOLLOWUP_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, summary: currentSummary }), signal: controller.signal });
+      } finally { clearTimeout(timer); }
+      if (!response.ok) throw new Error(`Server error: ${response.status}`);
       const text = await response.text();
       const cleaned = text.trim().replace(/^=+/, '').trim();
       typing.innerHTML = safeRender(cleaned);
       typing.classList.remove('typing');
     } catch (e) {
-      typing.textContent = 'Could not connect. Please try again in a moment.';
+      typing.textContent = friendlyRequestError(e);
       typing.classList.remove('typing');
     }
   }
@@ -1535,7 +1607,37 @@
     });
   }
  
-  function buyGuide(url) { window.location.href = url; }
+  // ── STUDY GUIDES: optional email signup, then open the PDF ───────────
+  let pendingGuideUrl = null;
+  function openGuide(url, title) {
+    pendingGuideUrl = url;
+    document.getElementById('guideTitle').textContent = 'Get the ' + title + ' guide';
+    document.getElementById('guideError').classList.remove('visible');
+    document.getElementById('guideModal').classList.add('visible');
+    setTimeout(() => document.getElementById('guideEmail').focus(), 100);
+  }
+  function closeGuide() {
+    document.getElementById('guideModal').classList.remove('visible');
+    document.getElementById('guideEmail').value = '';
+    pendingGuideUrl = null;
+  }
+  async function confirmGuide(withEmail) {
+    const url = pendingGuideUrl;
+    if (!url) return;
+    const email = document.getElementById('guideEmail').value.trim();
+    if (withEmail && !isValidEmail(email)) {
+      const errEl = document.getElementById('guideError');
+      errEl.textContent = 'Please enter a valid email, or choose "No thanks, just download".';
+      errEl.classList.add('visible');
+      return;
+    }
+    // Open the PDF immediately (inside the click) so popup blockers allow it.
+    window.open(url, '_blank', 'noopener');
+    if (withEmail) {
+      try { await sb.rpc('subscribe', { p_email: email }); } catch (e) {}
+    }
+    closeGuide();
+  }
 
   // ── FAQ ACCORDION ────────────────────────────────────────────
   function toggleFaq(btn) {
@@ -1556,7 +1658,15 @@
       item.classList.add('open');
       answer.style.maxHeight = answer.scrollHeight + 'px';
     }
+    syncFaqAria();
   }
+  function syncFaqAria() {
+    document.querySelectorAll('.faq-item').forEach(el => {
+      const q = el.querySelector('.faq-question');
+      if (q) q.setAttribute('aria-expanded', el.classList.contains('open') ? 'true' : 'false');
+    });
+  }
+  syncFaqAria();
  
   // ── FRAMER ANIMATIONS ──────────────────────────────────────────
  
