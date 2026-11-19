@@ -1,6 +1,6 @@
 # MedSumAI
 
-**Medical research, explained simply.** MedSumAI takes any biomedical topic, finds real articles on PubMed, and writes a plain-language summary with links back to the sources. Free to use, no signup needed to search.
+**Medical research, explained simply.** Built for pre-med and AP Bio students: paste a PubMed paper or type a topic, and MedSumAI finds the real articles on PubMed and writes a cited plain-language summary at your reading level, with an evidence check and flashcards you can export to Anki. Free to use, no signup needed to search.
 
 **Live site:** https://medsumai.com
 
@@ -49,7 +49,7 @@ The SQL lives in [`supabase/migrations`](supabase/migrations) and is meant to be
 Source in [`worker/src`](worker/src), tests in [`worker/test`](worker/test) (`cd worker && npm test`), bundled output in `worker/dist/worker.js` (`npm run build`).
 
 - `POST /summarize` `{ topic, level? }` returns Markdown. `POST /chat` `{ question, summary }` returns Markdown. `GET /health` returns `ok`.
-- **Limits** (per visitor, by salted IP hash, plus a shared daily cap) are enforced before any PubMed or OpenAI call: 3/min and 12/hour per visitor for summaries, 8/min and 40/hour for chat, 800 summaries and 3,000 chat messages per day overall. Change them with the `SUMMARIZE_PER_MINUTE`, `SUMMARIZE_PER_HOUR`, `SUMMARIZE_PER_DAY_GLOBAL`, `CHAT_PER_MINUTE`, `CHAT_PER_HOUR` and `CHAT_PER_DAY_GLOBAL` variables in the Worker settings. Counters live in a Durable Object and delete themselves when their window ends.
+- **Limits** (per visitor, by salted IP hash, plus a shared daily cap) are enforced before any PubMed or OpenAI call: 3/min and 12/hour per visitor for summaries, 8/min and 40/hour for chat, 800 summaries and 3,000 chat messages per day overall. Flashcards (`POST /flashcards {summary}`, returns `{cards:[{front,back}]}`) are limited to 3/min and 15/hour per visitor and 600/day overall. Change them with the `SUMMARIZE_PER_MINUTE`, `SUMMARIZE_PER_HOUR`, `SUMMARIZE_PER_DAY_GLOBAL`, `CHAT_PER_MINUTE`, `CHAT_PER_HOUR`, `CHAT_PER_DAY_GLOBAL`, `CARDS_PER_MINUTE`, `CARDS_PER_HOUR` and `CARDS_PER_DAY_GLOBAL` variables in the Worker settings. Counters live in a Durable Object and delete themselves when their window ends.
 - Browsers may only call it from medsumai.com (CORS allow-list in `src/index.js`). This is not a security boundary by itself, because other clients can still call the API; the limits are what protect the bill.
 - A search that finds no PubMed articles never calls OpenAI.
 - **Secrets** are set in Cloudflare (Workers & Pages, medsumai-api, Settings, Variables and Secrets), never in the repo: `OPENAI_API_KEY` (required), `IP_SALT` (random, already set), `NCBI_API_KEY` (optional, raises PubMed's rate limit). Optional variables: `MODEL` (default `gpt-5-mini`), `REASONING_EFFORT` (default `minimal`).

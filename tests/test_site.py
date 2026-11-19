@@ -48,7 +48,14 @@ def route(r):
             return r.fulfill(status=429, headers={**CORS, 'content-type': 'application/json'}, body=json.dumps({'error': 'Too many requests. Please wait a bit and try again.'}))
         if state['webhook_mode'] == 'daily':
             return r.fulfill(status=429, headers={**CORS, 'content-type': 'application/json'}, body=json.dumps({'error': 'MedSumAI has reached its free daily limit. Please come back tomorrow.'}))
+        if state['webhook_mode'] == 'long':
+            return r.fulfill(status=200, headers={**CORS, 'content-type': 'text/plain'}, body='## In plain English\n\n' + 'Vitamin D may modestly reduce depressive symptoms. ' * 8)
         return r.fulfill(status=200, headers={**CORS, 'content-type': 'text/plain'}, body='## Summary\n\nTest summary text.')
+    if 'api.medsumai.com/flashcards' in url:
+        calls.append(('webhook:cards', json.loads(req.post_data or '{}')))
+        if state['webhook_mode'] == 'cardsfail':
+            return r.fulfill(status=502, headers={**CORS, 'content-type': 'application/json'}, body=json.dumps({'error': 'The summarizer is temporarily unavailable. Please try again in a few minutes.'}))
+        return r.fulfill(status=200, headers={**CORS, 'content-type': 'application/json'}, body=json.dumps({'cards': [{'front': 'What is a meta-analysis?', 'back': 'It pools\tresults\nfrom trials.'}, {'front': 'Q2 <b>x</b>?', 'back': 'A2'}]}))
     if 'api.medsumai.com/chat' in url:
         calls.append(('webhook:chat', json.loads(req.post_data or '{}')))
         return r.fulfill(status=200, headers={**CORS, 'content-type': 'text/plain'}, body='Follow-up answer.')
@@ -242,6 +249,33 @@ with sync_playwright() as p:
     body = q.inner_text('body')
     check('14 privacy page discloses hashed-IP rate limiting', 'hashed' in body and 'Last updated: November 2026' in body)
     check('14 privacy canonical is medsumai.com', q.get_attribute('link[rel=canonical]', 'href') == 'https://medsumai.com/privacy.html')
+    # 15. flashcards + Anki export
+    state['webhook_mode'] = 'ok'
+    f = ctx.new_page()
+    f.goto(f'http://127.0.0.1:{PORT}/index.html')
+    f.fill('#topicInput', 'short result'); f.click('#searchBtn'); f.wait_for_selector('#resultBox.visible')
+    check('15 flashcards hidden for a short/no-result summary', not f.is_visible('#cardsBox'))
+    state['webhook_mode'] = 'long'
+    f.fill('#topicInput', 'vitamin D'); f.click('#searchBtn'); f.wait_for_selector('#resultBox.visible')
+    check('15 flashcards box shown for a real summary', f.is_visible('#cardsBox') and not f.is_visible('#ankiBtn'))
+    f.click('#cardsBtn'); f.wait_for_selector('.flashcard')
+    check('15 two flashcards rendered, answers hidden', f.locator('.flashcard').count() == 2 and not f.locator('.fc-a').first.is_visible())
+    check('15 card text is plain text (no HTML injection)', f.locator('.flashcard').nth(1).locator('.fc-q').inner_text() == 'Q2 <b>x</b>?' and f.locator('.flashcard b').count() == 0)
+    f.locator('.flashcard').first.click()
+    check('15 clicking a card reveals the answer', f.locator('.fc-a').first.is_visible())
+    check('15 flashcards request sent only the summary', calls[-1][0] == 'webhook:cards' and list(calls[-1][1].keys()) == ['summary'])
+    with f.expect_download() as dl:
+        f.click('#ankiBtn')
+    path = dl.value.path()
+    txt = open(path, encoding='utf-8').read()
+    check('15 anki file name', dl.value.suggested_filename == 'medsumai-vitamin-d.txt', dl.value.suggested_filename)
+    check('15 anki file has headers and tab-separated rows with no stray tabs/newlines', txt.startswith('#separator:tab\n#html:false\n#tags column:3\n') and txt.splitlines()[3].split('\t') == ['What is a meta-analysis?', 'It pools results from trials.', 'medsumai'], repr(txt[:160]))
+    f.fill('#topicInput', 'again'); f.click('#searchBtn'); f.wait_for_selector('#resultBox.visible')
+    check('15 new search clears old flashcards', f.locator('.flashcard').count() == 0 and not f.is_visible('#ankiBtn'))
+    state['webhook_mode'] = 'cardsfail'
+    f.click('#cardsBtn'); f.wait_for_selector('#cardsList.visible')
+    check('15 flashcards failure shows a friendly message', 'temporarily unavailable' in f.inner_text('#cardsList') and f.locator('.flashcard').count() == 0, f.inner_text('#cardsList'))
+    state['webhook_mode'] = 'ok'
     browser.close()
 
 httpd.shutdown()
