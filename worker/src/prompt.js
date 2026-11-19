@@ -16,6 +16,9 @@ Rules you must follow:
 - Cite every factual claim with the PMID of the supporting article in this exact form: [PMID 12345678]. One PMID per bracket. Only cite PMIDs that appear in <articles>.
 - Never give personal medical advice, diagnoses, or treatment recommendations. You explain research; you do not tell anyone what to do about their health.
 - Be honest about uncertainty: say when evidence is limited, mixed, preliminary, or from animal/cell studies.
+- Give the most weight to meta-analyses, systematic reviews and randomized trials (each <article> has a type attribute). Narrative reviews and observational studies show associations and background; say so rather than presenting them as proof.
+- If the abstracts do not actually address the topic the reader asked about, say so plainly at the start instead of summarizing unrelated findings.
+- If no <article> is a trial, meta-analysis or systematic review, say clearly in the evidence section that this answer rests on background reviews and individual studies, not pooled or trial evidence.
 
 Write in Markdown with exactly these sections, in this order:
 
@@ -79,20 +82,37 @@ export function linkCitations(text, articles) {
     .replace(/[ \t]+([.,;:])/g, '$1');
 }
 
+export function pluralize(label) {
+  if (/y$/.test(label)) return label.slice(0, -1) + 'ies'; // study -> studies
+  if (/is$/.test(label)) return label.slice(0, -2) + 'es'; // meta-analysis -> meta-analyses
+  return label + 's';
+}
+
 export function evidenceLine(articles) {
   const counts = {};
   for (const a of articles) counts[a.studyType] = (counts[a.studyType] || 0) + 1;
   const parts = Object.entries(counts)
     .sort((a, b) => b[1] - a[1])
-    .map(([k, n]) => `${n} ${k.toLowerCase()}${n > 1 ? 's' : ''}`);
+    .map(([k, n]) => `${n} ${n > 1 ? pluralize(k.toLowerCase()) : k.toLowerCase()}`);
   return `Based on ${articles.length} PubMed abstract${articles.length > 1 ? 's' : ''}: ${parts.join(', ')}. Abstracts only, not full papers.`;
+}
+
+const POOLED = new Set(['Meta-analysis', 'Systematic review']);
+const TRIALS = new Set(['Randomized controlled trial', 'Clinical trial']);
+
+// A plain-language reading of the evidence mix, computed from PubMed's own labels (not by the model).
+export function evidenceNote(articles) {
+  const types = articles.map((a) => a.studyType);
+  if (types.some((t) => POOLED.has(t))) return 'Includes pooled evidence (a meta-analysis or systematic review).';
+  if (types.some((t) => TRIALS.has(t))) return 'Includes clinical trials, but no pooled analysis.';
+  return 'No trials or pooled analyses among these abstracts: treat this as background, not proof.';
 }
 
 export function sourcesSection(articles) {
   const lines = articles.map(
     (a, i) => `${i + 1}. ${a.title} *${a.journal}${a.year ? `, ${a.year}` : ''}* · ${a.studyType} · [PubMed](${a.url})`
   );
-  return `## Sources\n${evidenceLine(articles)}\n\n${lines.join('\n')}`;
+  return `## Sources\n${evidenceLine(articles)} ${evidenceNote(articles)}\n\n${lines.join('\n')}`;
 }
 
 export function assembleSummary(modelText, articles) {

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseArticles, decodeEntities, classifyStudy } from '../src/pubmed.js';
-import { linkCitations, assembleSummary, evidenceLine } from '../src/prompt.js';
+import { parseArticles, decodeEntities, classifyStudy, cleanTerm, searchPubMed } from '../src/pubmed.js';
+import { linkCitations, assembleSummary, evidenceLine, evidenceNote, pluralize } from '../src/prompt.js';
 import { makeHandler, validTopic } from '../src/index.js';
 import { XML, makeFetch, makeLimiterNs } from './fixtures.js';
 
@@ -156,4 +156,79 @@ test('CORS preflight, health, 404', async () => {
   assert.equal(pre.headers.get('Access-Control-Allow-Origin'), ORIGIN);
   assert.equal(await (await h(new Request('https://api.test/health'), env())).text(), 'ok');
   assert.equal((await h(post('/nope', {}), env())).status, 404);
+});
+
+// ── evidence-first retrieval ───────────────────────────────────────────────
+const efetchIds = (f) => new URL(f.calls.find((c) => c.url.includes('efetch.fcgi')).url).searchParams.get('id').split(',');
+
+test('cleanTerm removes PubMed field/grouping syntax', () => {
+  assert.equal(cleanTerm('  cancer [tiab]  (immunotherapy) '), 'cancer tiab immunotherapy');
+  assert.equal(cleanTerm('[] ()'), '');
+});
+
+test('searchPubMed: evidence-pass results come first, duplicates removed, one efetch', async () => {
+  const f = makeFetch({ strongIds: ['11111111'], ids: { esearchresult: { idlist: ['22222222', '11111111'] } } });
+  const arts = await searchPubMed('vitamin D', { fetchImpl: f });
+  assert.deepEqual(arts.map((a) => a.pmid), ['11111111', '22222222']);
+  assert.deepEqual(efetchIds(f), ['11111111', '22222222']);
+  assert.equal(f.calls.filter((c) => c.url.includes('efetch.fcgi')).length, 1);
+  // the evidence pass asks for pooled analyses and trials from the last 10 years
+  const strongCall = f.calls.find((c) => decodeURIComponent(c.url).includes('[pt]'));
+  const q = decodeURIComponent(strongCall.url);
+  assert.match(q, /meta-analysis\[pt\]/);
+  assert.match(q, /randomized controlled trial\[pt\]/);
+  assert.match(q, new RegExp(`"${new Date().getUTCFullYear() - 10}"\\[dp\\]`));
+});
+
+test('searchPubMed: if the evidence pass fails, ordinary results are still returned', async () => {
+  const f = makeFetch({ strongStatus: 500 });
+  const arts = await searchPubMed('vitamin D', { fetchImpl: f });
+  assert.equal(arts.length, 2);
+});
+
+test('searchPubMed: if the ordinary search fails, it throws', async () => {
+  await assert.rejects(searchPubMed('vitamin D', { fetchImpl: makeFetch({ pubmedStatus: 503 }) }), /PubMed request failed/);
+});
+
+test('searchPubMed: a topic that cleans to nothing makes no request', async () => {
+  const f = makeFetch();
+  assert.deepEqual(await searchPubMed('[] ()', { fetchImpl: f }), []);
+  assert.equal(f.calls.length, 0);
+});
+
+test('evidenceNote reads the study mix honestly', () => {
+  const a = (studyType) => ({ studyType });
+  assert.match(evidenceNote([a('Narrative review'), a('Meta-analysis')]), /pooled evidence/);
+  assert.match(evidenceNote([a('Randomized controlled trial'), a('Narrative review')]), /clinical trials, but no pooled/);
+  assert.match(evidenceNote([a('Narrative review'), a('Research article')]), /treat this as background, not proof/);
+});
+
+test('summary Sources section includes the evidence note', () => {
+  const arts = parseArticles(XML); // meta-analysis + observational
+  assert.match(assembleSummary('## x', arts), /Includes pooled evidence/);
+});
+
+test('pluralize handles the labels we produce', () => {
+  assert.equal(pluralize('meta-analysis'), 'meta-analyses');
+  assert.equal(pluralize('cohort study'), 'cohort studies');
+  assert.equal(pluralize('case-control study'), 'case-control studies');
+  assert.equal(pluralize('randomized controlled trial'), 'randomized controlled trials');
+  assert.equal(pluralize('narrative review'), 'narrative reviews');
+});
+
+test('evidence line uses correct plurals', () => {
+  const a = (studyType) => ({ studyType });
+  assert.match(evidenceLine([a('Meta-analysis'), a('Meta-analysis'), a('Cohort study'), a('Cohort study'), a('Case report')]), /2 meta-analyses, 2 cohort studies, 1 case report\./);
+});
+
+test('searchPubMed retries a 429 and then succeeds', async () => {
+  let n = 0;
+  const base = makeFetch();
+  const flaky = async (url, init) => {
+    if (String(url).includes('efetch.fcgi') && n++ < 1) return new Response('slow down', { status: 429 });
+    return base(url, init);
+  };
+  const arts = await searchPubMed('vitamin D', { fetchImpl: flaky });
+  assert.equal(arts.length, 2);
+  assert.equal(n, 2);
 });
