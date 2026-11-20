@@ -1530,7 +1530,6 @@
     sel.addEventListener('change', () => { try { localStorage.setItem('msai_level', sel.value); } catch (e) {} });
   })();
   let currentSummary = '';
-  let loadingInterval = null;
  
   function setTopic(topic) { document.getElementById('topicInput').value = topic; document.getElementById('topicInput').focus(); }
  
@@ -1542,18 +1541,46 @@
     document.getElementById('cardsBox').classList.remove('visible');
     document.getElementById('searchBtn').disabled = true;
     document.getElementById('searchBtn').textContent = 'Searching...';
-    const steps = ['step1','step2','step3','step4'];
-    let i = 0;
-    steps.forEach(s => { document.getElementById(s).className = 'loading-step'; });
-    loadingInterval = setInterval(() => {
-      if (i > 0 && i < steps.length) document.getElementById(steps[i-1]).className = 'loading-step done';
-      if (i < steps.length) { document.getElementById(steps[i]).className = 'loading-step active'; i++; }
-    }, 1800);
+    ['step1','step2','step3','step4'].forEach(id => { document.getElementById(id).className = 'loading-step'; });
+    document.getElementById('step1').textContent = '⟳ Searching PubMed';
+    document.getElementById('step2').textContent = '⟳ Reading abstracts';
+    document.getElementById('step3').textContent = '⟳ Writing your summary';
+    document.getElementById('step1').className = 'loading-step active';
   }
- 
+
+  // Real progress: the Worker streams one JSON line per stage.
+  function setStep(n, state) { document.getElementById('step' + n).className = 'loading-step ' + state; }
+  function onStage(e) {
+    if (e.stage === 'search' && e.paper) document.getElementById('step1').textContent = '⟳ Looking up that paper on PubMed';
+    if (e.stage === 'abstracts') {
+      setStep(1, 'done');
+      document.getElementById('step2').textContent = '✓ Found ' + e.count + ' abstract' + (e.count === 1 ? '' : 's');
+      setStep(2, 'done');
+      setStep(3, 'active');
+    }
+  }
+  async function readSummaryStream(response) {
+    const reader = response.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '', result = null;
+    const handle = line => {
+      if (!line.trim()) return;
+      let e; try { e = JSON.parse(line); } catch (err) { return; }
+      if (e.event === 'stage') onStage(e);
+      else if (e.event === 'done' && typeof e.markdown === 'string') result = e.markdown;
+      else if (e.event === 'error') { const err = new Error('Server error: 502'); err.userMessage = e.error; throw err; }
+    };
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (value) { buf += dec.decode(value, { stream: !done }); const parts = buf.split('\n'); buf = parts.pop(); parts.forEach(handle); }
+      if (done) break;
+    }
+    handle(buf);
+    if (result === null) throw new Error('Server error: 502');
+    return result;
+  }
   function hideLoading() {
     document.getElementById('loading').classList.remove('visible');
-    clearInterval(loadingInterval);
     document.getElementById('searchBtn').disabled = false;
     document.getElementById('searchBtn').textContent = 'Summarize →';
   }
@@ -1583,10 +1610,12 @@
       const timer = setTimeout(() => controller.abort(), 90000);
       let response;
       try {
-        response = await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topic, level: document.getElementById('levelSelect').value }), signal: controller.signal });
+        response = await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/x-ndjson, text/markdown;q=0.5' }, body: JSON.stringify({ topic, level: document.getElementById('levelSelect').value }), signal: controller.signal });
+        if (!response.ok) throw await apiError(response);
+        // Older/plain responses still work: only stream-read when the Worker says it is streaming.
+        var html = (response.headers.get('content-type') || '').includes('x-ndjson') && response.body ? await readSummaryStream(response) : await response.text();
+        setStep(3, 'done'); setStep(4, 'active');
       } finally { clearTimeout(timer); }
-      if (!response.ok) throw await apiError(response);
-      const html = await response.text();
       trackSearch(topic);
       hideLoading();
       currentSummary = html;

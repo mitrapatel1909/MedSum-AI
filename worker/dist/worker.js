@@ -399,32 +399,63 @@ async function handleSummarize(request, env, deps) {
     const msg = lim.global ? "MedSumAI has reached its free daily limit. Please come back tomorrow." : "Too many requests. Please wait a bit and try again.";
     return json(request, 429, { error: msg }, { "Retry-After": String(lim.retryAfter) });
   }
+  const job = { env, deps, topic, paper, level };
+  const wantsStream = (request.headers.get("Accept") || "").includes("application/x-ndjson");
+  if (!wantsStream) {
+    const r = await runSummary(job);
+    return r.error ? json(request, r.status, { error: r.error }) : markdown(request, r.markdown);
+  }
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const enc = new TextEncoder();
+  const send = (obj) => writer.write(enc.encode(JSON.stringify(obj) + "\n")).catch(() => {
+  });
+  (async () => {
+    try {
+      const r = await runSummary(job, (e) => send({ event: "stage", ...e }));
+      await send(r.error ? { event: "error", error: r.error } : { event: "done", markdown: r.markdown });
+    } catch {
+      await send({ event: "error", error: "Something went wrong. Please try again." });
+    } finally {
+      writer.close().catch(() => {
+      });
+    }
+  })();
+  return new Response(readable, {
+    status: 200,
+    headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", ...corsHeaders(request) }
+  });
+}
+async function runSummary({ env, deps, topic, paper, level }, emit = () => {
+}) {
+  emit({ stage: "search", paper: Boolean(paper) });
   let articles;
   try {
     if (paper) {
       const r = await fetchPaper(paper, { fetchImpl: deps.fetchImpl, apiKey: env.NCBI_API_KEY });
       if (!r.article) {
-        return markdown(request, r.reason === "no_abstract" ? "## No abstract available\nThat paper is on PubMed but has no abstract, and MedSumAI only summarizes abstracts. Try searching its topic instead." : "## Paper not found\nI could not find that paper on PubMed. Check the PMID, DOI or link, or search its topic instead.");
+        return {
+          markdown: r.reason === "no_abstract" ? "## No abstract available\nThat paper is on PubMed but has no abstract, and MedSumAI only summarizes abstracts. Try searching its topic instead." : "## Paper not found\nI could not find that paper on PubMed. Check the PMID, DOI or link, or search its topic instead."
+        };
       }
       articles = [r.article];
     } else {
       articles = await searchPubMed(topic, { fetchImpl: deps.fetchImpl, apiKey: env.NCBI_API_KEY });
     }
   } catch {
-    return json(request, 502, { error: "PubMed is not responding right now. Please try again shortly." });
+    return { status: 502, error: "PubMed is not responding right now. Please try again shortly." };
   }
   if (!articles.length) {
-    return markdown(
-      request,
-      `## No studies found
-I could not find PubMed abstracts for **${topic.replace(/[*_`<>[\]]/g, "")}**. Try a more specific medical term, check the spelling, or search a broader topic.`
-    );
+    return { markdown: `## No studies found
+I could not find PubMed abstracts for **${topic.replace(/[*_`<>[\]]/g, "")}**. Try a more specific medical term, check the spelling, or search a broader topic.` };
   }
+  emit({ stage: "abstracts", count: articles.length });
+  emit({ stage: "write" });
   try {
     const text = await callOpenAI(env, buildSummaryMessages(paper ? `one specific paper (PMID ${articles[0].pmid}): ${articles[0].title}` : topic, articles, level), 1800, deps.fetchImpl);
-    return markdown(request, assembleSummary(text, articles));
+    return { markdown: assembleSummary(text, articles) };
   } catch {
-    return json(request, 502, { error: "The summarizer is temporarily unavailable. Please try again in a few minutes." });
+    return { status: 502, error: "The summarizer is temporarily unavailable. Please try again in a few minutes." };
   }
 }
 async function handleChat(request, env, deps) {

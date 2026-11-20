@@ -48,6 +48,12 @@ def route(r):
             return r.fulfill(status=429, headers={**CORS, 'content-type': 'application/json'}, body=json.dumps({'error': 'Too many requests. Please wait a bit and try again.'}))
         if state['webhook_mode'] == 'daily':
             return r.fulfill(status=429, headers={**CORS, 'content-type': 'application/json'}, body=json.dumps({'error': 'MedSumAI has reached its free daily limit. Please come back tomorrow.'}))
+        if state['webhook_mode'] == 'stream':
+            lines = [{'event': 'stage', 'stage': 'search'}, {'event': 'stage', 'stage': 'abstracts', 'count': 3}, {'event': 'stage', 'stage': 'write'}, {'event': 'done', 'markdown': '## In plain English\n\nStreamed summary text.'}]
+            return r.fulfill(status=200, headers={**CORS, 'content-type': 'application/x-ndjson'}, body='\n'.join(json.dumps(l) for l in lines) + '\n')
+        if state['webhook_mode'] == 'streamerr':
+            lines = [{'event': 'stage', 'stage': 'search'}, {'event': 'error', 'error': 'PubMed is not responding right now. Please try again shortly.'}]
+            return r.fulfill(status=200, headers={**CORS, 'content-type': 'application/x-ndjson'}, body='\n'.join(json.dumps(l) for l in lines) + '\n')
         if state['webhook_mode'] == 'long':
             return r.fulfill(status=200, headers={**CORS, 'content-type': 'text/plain'}, body='## In plain English\n\n' + 'Vitamin D may modestly reduce depressive symptoms. ' * 8)
         return r.fulfill(status=200, headers={**CORS, 'content-type': 'text/plain'}, body='## Summary\n\nTest summary text.')
@@ -281,6 +287,37 @@ with sync_playwright() as p:
     state['webhook_mode'] = 'cardsfail'
     f.click('#cardsBtn'); f.wait_for_selector('#cardsList.visible')
     check('15 flashcards failure shows a friendly message', 'temporarily unavailable' in f.inner_text('#cardsList') and f.locator('.flashcard').count() == 0, f.inner_text('#cardsList'))
+    # 16. real loading progress (streamed stages)
+    state['webhook_mode'] = 'stream'
+    g = ctx.new_page()
+    g.goto(f'http://127.0.0.1:{PORT}/index.html')
+    g.fill('#topicInput', 'streamed topic'); g.click('#searchBtn'); g.wait_for_selector('#resultBox.visible')
+    check('16 streamed summary is rendered', 'Streamed summary text.' in g.inner_text('#resultContent'))
+    check('16 request asks for the stream', any(c[0] == 'webhook:search' for c in calls))
+    state['webhook_mode'] = 'streamerr'
+    g.fill('#topicInput', 'streamed error'); g.click('#searchBtn'); g.wait_for_selector('#errorBox.visible')
+    check('16 stream error event shows the friendly message', 'PubMed is not responding' in g.inner_text('#errorBox'), g.inner_text('#errorBox'))
+    state['webhook_mode'] = 'ok'
+    g.fill('#topicInput', 'plain fallback'); g.click('#searchBtn'); g.wait_for_selector('#resultBox.visible')
+    check('16 plain (non-stream) response still works', 'Test summary text.' in g.inner_text('#resultContent'))
+    # intermediate states: feed the reader chunks with pauses and watch the steps change
+    seen = g.evaluate('''async () => {
+      showLoading();
+      const enc = new TextEncoder();
+      const parts = ['{"event":"stage","stage":"search"}\\n', '{"event":"stage","stage":"abstracts","count":3}\\n{"event":"stage",', '"stage":"write"}\\n{"event":"done","markdown":"## ok"}\\n'];
+      let i = 0;
+      const stream = new ReadableStream({ async pull(c) { if (i >= parts.length) return c.close(); await new Promise(r => setTimeout(r, 120)); c.enqueue(enc.encode(parts[i++])); } });
+      const snap = () => ['step1','step2','step3'].map(id => document.getElementById(id).className.replace('loading-step','').trim() || 'idle');
+      const first = snap();
+      const p = readSummaryStream(new Response(stream));
+      await new Promise(r => setTimeout(r, 300));
+      const mid = snap(); const midText = document.getElementById('step2').textContent;
+      const md = await p;
+      return { first, mid, midText, md };
+    }''')
+    check('16 before any event only step 1 is active', seen['first'] == ['active', 'idle', 'idle'], str(seen['first']))
+    check('16 after the abstracts event steps 1-2 are done, step 3 active, count shown', seen['mid'] == ['done', 'done', 'active'] and 'Found 3 abstracts' in seen['midText'], str(seen))
+    check('16 chunks split mid-line are reassembled', seen['md'] == '## ok', str(seen['md']))
     state['webhook_mode'] = 'ok'
     browser.close()
 
