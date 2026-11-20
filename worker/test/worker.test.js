@@ -333,3 +333,39 @@ test('flashcards: unusable model output gives a friendly 502', async () => {
   const res = await makeHandler({ fetchImpl: f })(post('/flashcards', { summary: SUMMARY }), env());
   assert.equal(res.status, 502);
 });
+
+const NDJSON = { Accept: 'application/x-ndjson' };
+const lines = async (res) => (await res.text()).trim().split('\n').map((l) => JSON.parse(l));
+
+test('summarize stream: real stages in order, then the same markdown as the plain response', async () => {
+  const f = makeFetch({ openaiText: 'Finding [PMID 11111111].' });
+  const res = await makeHandler({ fetchImpl: f })(post('/summarize', { topic: 'vitamin D immunity' }, NDJSON), env());
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type'), /x-ndjson/);
+  const ev = await lines(res);
+  assert.deepEqual(ev.map((e) => e.stage || e.event), ['search', 'abstracts', 'write', 'done']);
+  assert.equal(ev[1].count, 2);
+  const plain = await (await makeHandler({ fetchImpl: makeFetch({ openaiText: 'Finding [PMID 11111111].' }) })(post('/summarize', { topic: 'vitamin D immunity' }), env())).text();
+  assert.equal(ev[3].markdown, plain);
+});
+
+test('summarize stream: no results ends with done and never reaches the writing stage', async () => {
+  const f = makeFetch({ ids: { esearchresult: { idlist: [] } } });
+  const ev = await lines(await makeHandler({ fetchImpl: f })(post('/summarize', { topic: 'zzzzqqqq nonsense' }, NDJSON), env()));
+  assert.deepEqual(ev.map((e) => e.stage || e.event), ['search', 'done']);
+  assert.match(ev[1].markdown, /No studies found/);
+});
+
+test('summarize stream: upstream failure is an error event; limits and bad input stay plain JSON errors', async () => {
+  const bad = makeFetch({ openaiStatus: 500 });
+  const ev = await lines(await makeHandler({ fetchImpl: bad })(post('/summarize', { topic: 'vitamin D' }, NDJSON), env()));
+  assert.equal(ev.at(-1).event, 'error');
+  assert.doesNotMatch(JSON.stringify(ev), /sk-test|OpenAI 500/);
+  const h = makeHandler({ fetchImpl: makeFetch() });
+  assert.equal((await h(post('/summarize', { topic: 'a' }, NDJSON), env())).status, 400);
+  const e = env({ SUMMARIZE_PER_MINUTE: '1' });
+  await (await h(post('/summarize', { topic: 'vitamin D' }, NDJSON), e)).text();
+  const limited = await h(post('/summarize', { topic: 'vitamin D' }, NDJSON), e);
+  assert.equal(limited.status, 429);
+  assert.match(limited.headers.get('content-type'), /json/);
+});
