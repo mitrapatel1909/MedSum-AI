@@ -225,8 +225,9 @@
     .cards-list { border-top: 1px solid var(--border); padding: 1rem 1.5rem 1.25rem; display: none; gap: 0.6rem; flex-direction: column; }
     .cards-list.visible { display: flex; }
     .cards-hint { font-size: 0.8rem; color: var(--muted); }
-    .flashcard { text-align: left; width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1rem; cursor: pointer; color: var(--ink); font: inherit; }
-    .flashcard:hover { border-color: var(--green, #2d6a4f); }
+    .flashcard { white-space: normal; overflow: visible; text-align: left; line-height: 1.45; font-size: 0.95rem; width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1rem; cursor: pointer; color: var(--ink); font: inherit; }
+    .flashcard:hover, .flashcard:active, .flashcard:focus-visible { background: var(--bg); transform: none; border-color: var(--accent); }
+    .flashcard .fc-q, .flashcard .fc-a { overflow-wrap: anywhere; }
     .flashcard .fc-q { font-weight: 500; }
     .flashcard .fc-a { display: none; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); color: var(--muted); }
     .flashcard.open .fc-a { display: block; }
@@ -719,7 +720,7 @@
  
   <div class="cards-box" id="cardsBox">
     <div class="cards-head">
-      <div class="cards-title">🃏 Flashcards</div>
+      <div class="cards-title">Flashcards</div>
       <div class="cards-actions">
         <button class="copy-btn" id="cardsBtn" onclick="makeCards()">Make flashcards from this summary</button>
         <button class="copy-btn" id="ankiBtn" onclick="downloadAnki()" style="display:none">Download for Anki</button>

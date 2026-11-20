@@ -55,7 +55,7 @@ def route(r):
         calls.append(('webhook:cards', json.loads(req.post_data or '{}')))
         if state['webhook_mode'] == 'cardsfail':
             return r.fulfill(status=502, headers={**CORS, 'content-type': 'application/json'}, body=json.dumps({'error': 'The summarizer is temporarily unavailable. Please try again in a few minutes.'}))
-        return r.fulfill(status=200, headers={**CORS, 'content-type': 'application/json'}, body=json.dumps({'cards': [{'front': 'What is a meta-analysis?', 'back': 'It pools\tresults\nfrom trials.'}, {'front': 'Q2 <b>x</b>?', 'back': 'A2'}]}))
+        return r.fulfill(status=200, headers={**CORS, 'content-type': 'application/json'}, body=json.dumps({'cards': [{'front': 'What is a meta-analysis?', 'back': 'It pools\tresults\nfrom trials.'}, {'front': 'Q2 <b>x</b>? ' + 'How strong is the evidence supporting pharmacological maintenance and adjunctive psychotherapy in adults? ' * 2, 'back': 'Stronger evidence comes from systematic reviews and network meta-analyses of randomized trials, but heterogeneity and short follow-up limit confidence. ' * 2}]}))
     if 'api.medsumai.com/chat' in url:
         calls.append(('webhook:chat', json.loads(req.post_data or '{}')))
         return r.fulfill(status=200, headers={**CORS, 'content-type': 'text/plain'}, body='Follow-up answer.')
@@ -260,8 +260,14 @@ with sync_playwright() as p:
     check('15 flashcards box shown for a real summary', f.is_visible('#cardsBox') and not f.is_visible('#ankiBtn'))
     f.click('#cardsBtn'); f.wait_for_selector('.flashcard')
     check('15 two flashcards rendered, answers hidden', f.locator('.flashcard').count() == 2 and not f.locator('.fc-a').first.is_visible())
-    check('15 card text is plain text (no HTML injection)', f.locator('.flashcard').nth(1).locator('.fc-q').inner_text() == 'Q2 <b>x</b>?' and f.locator('.flashcard b').count() == 0)
+    check('15 card text is plain text (no HTML injection)', f.locator('.flashcard').nth(1).locator('.fc-q').inner_text().startswith('Q2 <b>x</b>?') and f.locator('.flashcard b').count() == 0)
     f.locator('.flashcard').first.click()
+    clipped = f.evaluate("[...document.querySelectorAll('.flashcard, .fc-q, .fc-a')].filter(e => e.scrollWidth > e.clientWidth + 1).length")
+    check('15 flashcard text wraps (nothing clipped)', clipped == 0, str(clipped))
+    f.locator('.flashcard').first.hover()
+    bg = f.evaluate("getComputedStyle(document.querySelector('.flashcard')).backgroundColor")
+    bg_other = f.evaluate("getComputedStyle(document.querySelectorAll('.flashcard')[1]).backgroundColor")
+    check('15 hovered flashcard keeps a light background (text stays readable)', bg == bg_other, bg + ' vs ' + bg_other)
     check('15 clicking a card reveals the answer', f.locator('.fc-a').first.is_visible())
     check('15 flashcards request sent only the summary', calls[-1][0] == 'webhook:cards' and list(calls[-1][1].keys()) == ['summary'])
     with f.expect_download() as dl:
