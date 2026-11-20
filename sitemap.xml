@@ -37,7 +37,25 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://medsumai.com/topics/glp-1-drugs-obesity.html</loc>
+    <lastmod>2026-11-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://medsumai.com/topics/gut-microbiome-and-health.html</loc>
+    <lastmod>2026-11-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://medsumai.com/topics/intermittent-fasting.html</loc>
+    <lastmod>2026-11-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://medsumai.com/topics/long-covid.html</loc>
     <lastmod>2026-11-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
