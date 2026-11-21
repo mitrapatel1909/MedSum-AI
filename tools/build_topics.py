@@ -18,7 +18,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = 'https://medsumai.com'
 PUBMED = re.compile(r'^https://pubmed\.ncbi\.nlm\.nih\.gov/\d{1,9}/?$')
-CATEGORY_ORDER = ['Neurology', 'Mental health', 'Oncology', 'Infectious disease', 'Genetics', 'Endocrinology', 'Nutrition & lifestyle']
+CATEGORY_ORDER = ['Neurology', 'Mental health', 'Cardiovascular', 'Oncology', 'Infectious disease', 'Immunology', 'Genetics', 'Endocrinology', 'Nutrition & lifestyle']
 
 
 def esc(s):
@@ -240,6 +240,11 @@ def build_topic(t, all_topics):
     return page
 
 
+def search_blob(t, snippet):
+    text = ' '.join([t['title'], t['category'], t['query'], t['slug'].replace('-', ' '), snippet])
+    return re.sub(r'\s+', ' ', re.sub(r'[^a-z0-9 ]+', ' ', text.lower())).strip()
+
+
 def build_index(topics):
     cats = [c for c in CATEGORY_ORDER if any(t['category'] == c for t in topics)]
     cats += sorted({t['category'] for t in topics} - set(cats))
@@ -249,7 +254,7 @@ def build_index(topics):
     for t in sorted(topics, key=lambda x: x['title']):
         snippet = first_sentences(section_text(t['markdown'], 'In plain English'), 170)
         n, _, note = evidence_facts(t['markdown'])
-        cards += f'''<a class="topic-card" href="/topics/{t["slug"]}.html" data-cat="{esc(t["category"])}">
+        cards += f'''<a class="topic-card" href="/topics/{t["slug"]}.html" data-cat="{esc(t["category"])}" data-search="{esc(search_blob(t, snippet))}">
   <span class="rel-cat">{esc(t["category"])}</span>
   <span class="card-title">{esc(t["title"])}</span>
   <span class="card-snip">{esc(snippet)}</span>
@@ -261,12 +266,29 @@ def build_index(topics):
     script = '''<script>
 (function(){
   var pills=[].slice.call(document.querySelectorAll('.pill')), cards=[].slice.call(document.querySelectorAll('.topic-card'));
+  var box=document.getElementById('topic-search'), empty=document.getElementById('no-results'), count=document.getElementById('result-count'), clear=document.getElementById('search-clear');
+  var cat='all';
+  function norm(s){return (s||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\\s+/g,' ').trim()}
+  function apply(){
+    var q=norm(box.value), words=q?q.split(' '):[], shown=0;
+    cards.forEach(function(card){
+      var hay=card.getAttribute('data-search');
+      var ok=(cat==='all'||card.getAttribute('data-cat')===cat)&&words.every(function(w){return hay.indexOf(w)!==-1});
+      card.hidden=!ok; if(ok)shown++;
+    });
+    empty.hidden=shown!==0; clear.hidden=!box.value;
+    count.textContent=shown+(shown===1?' topic':' topics');
+    var qs=box.value.trim(); if(empty.hidden===false){document.getElementById('empty-q').textContent=qs; document.getElementById('empty-link').href='/?topic='+encodeURIComponent(qs)}
+  }
   pills.forEach(function(p){p.addEventListener('click',function(){
     pills.forEach(function(x){x.classList.remove('active');x.setAttribute('aria-pressed','false')});
     p.classList.add('active');p.setAttribute('aria-pressed','true');
-    var c=p.getAttribute('data-cat');
-    cards.forEach(function(card){card.hidden=!(c==='all'||card.getAttribute('data-cat')===c)});
+    cat=p.getAttribute('data-cat'); apply();
   })});
+  box.addEventListener('input',apply);
+  clear.addEventListener('click',function(){box.value='';apply();box.focus()});
+  var init=new URLSearchParams(location.search).get('q'); if(init){box.value=init.slice(0,100)}
+  apply();
 })();
 </script>'''
     return head('Research topics explained in plain English | MedSumAI', desc, SITE + '/topics/', f'  <script type="application/ld+json">{ld}</script>\n') + f'''
@@ -277,7 +299,17 @@ def build_index(topics):
   <p class="eyebrow">Browse</p>
   <h1>Research topics, <em>explained.</em></h1>
   <p class="lead">Real studies from PubMed, summarized in plain English with the sources linked. Pick a topic, or <a href="/">summarize your own</a>.</p>
+  <div class="search-row" role="search">
+    <label class="sr-only" for="topic-search">Search topics</label>
+    <input id="topic-search" type="search" placeholder="Search topics, e.g. diabetes, sleep, CRISPR" autocomplete="off" maxlength="100"/>
+    <button type="button" id="search-clear" class="search-clear" aria-label="Clear search" hidden>×</button>
+  </div>
   <div class="pills" role="group" aria-label="Filter by category">{pills}</div>
+  <p id="result-count" class="result-count" aria-live="polite"></p>
+  <div id="no-results" class="no-results" hidden>
+    <p>No topics match "<strong id="empty-q"></strong>" yet.</p>
+    <p><a id="empty-link" href="/">Summarize it with MedSumAI →</a> It takes about 10 seconds and links the PubMed sources.</p>
+  </div>
   <div class="topic-grid">
 {cards}  </div>
 </main>
