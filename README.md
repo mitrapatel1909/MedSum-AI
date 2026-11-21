@@ -55,9 +55,20 @@ Source in [`worker/src`](worker/src), tests in [`worker/test`](worker/test) (`cd
 - **Secrets** are set in Cloudflare (Workers & Pages, medsumai-api, Settings, Variables and Secrets), never in the repo: `OPENAI_API_KEY` (required), `IP_SALT` (random, already set), `NCBI_API_KEY` (optional, raises PubMed's rate limit). Optional variables: `MODEL` (default `gpt-5-mini`), `REASONING_EFFORT` (default `minimal`).
 - Deploying: `npm run build`, then upload `dist/worker.js` as the Worker `medsumai-api` with a Durable Object binding named `LIMITER` (class `Limiter`). Re-uploads must keep the existing secrets.
 
+## Weekly digest email (built, switched off)
+
+Once a week the Worker can write a cited summary on a rotating topic (the same pipeline as the site) and email it to active subscribers. Nothing runs until you turn it on:
+
+1. Create a free [Resend](https://resend.com) account, verify the sending domain (add the DNS records it shows), and make an API key.
+2. In Cloudflare (Worker `medsumai-api`, Settings, Variables and Secrets) add secrets `SUPABASE_SERVICE_KEY` (Supabase, Settings, API, `service_role`; never put it in the repo or the browser), `RESEND_API_KEY` and `DIGEST_ADMIN_TOKEN` (any long random string), and variables `SUPABASE_URL`, `DIGEST_FROM` (for example `MedSumAI <digest@yourdomain>`), `DIGEST_ENABLED=true`. Leave `DIGEST_DRY_RUN` unset: anything other than exactly `false` is a preview that sends nothing.
+3. Preview: `curl -X POST https://api.medsumai.com/admin/digest-preview -H "Authorization: Bearer <DIGEST_ADMIN_TOKEN>"` returns this week's topic, the recipient count and the email HTML. This route can never send.
+4. Send a test to yourself first, then set `DIGEST_DRY_RUN=false` and add a Cron Trigger (for example `0 16 * * 2`, Tuesdays 16:00 UTC). A once-per-week guard in the Durable Object stops double sends.
+
+Each email has an unsubscribe link (a confirm page, so link scanners cannot unsubscribe anyone) and the one-click `List-Unsubscribe` header. Migration `20261120000001` adds the per-subscriber token; the two functions it creates are callable only with the service key. Change the topic rotation with `DIGEST_TOPICS` (topics separated by `|`).
+
 ## Tests
 
-- `cd worker && npm test`: 16 unit tests for the Worker (PubMed parsing, citation checking, limits, validation, error handling).
+- `cd worker && npm test`: unit tests for the Worker (PubMed parsing, citation checking, limits, validation, error handling, weekly digest and unsubscribe).
 - `python3 tests/test_site.py`: browser tests for the site with the network stubbed (needs Playwright and Chromium).
 
 ## Known limitations

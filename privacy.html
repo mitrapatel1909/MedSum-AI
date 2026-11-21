@@ -159,7 +159,7 @@
       <tr><td>Search a topic</td><td>The topic you typed, so a summary can be generated. This is stored anonymously as part of an aggregate usage count — it is not linked to your identity unless you're logged in and choose to save it.</td></tr>
       <tr><td>Create an account</td><td>Your email address and password. Passwords are never stored in plain text — they're handled by our authentication provider using industry-standard hashing.</td></tr>
       <tr><td>Save a summary</td><td>The topic and summary text, linked to your account, so you can revisit it later from "My Summaries."</td></tr>
-      <tr><td>Subscribe to the newsletter</td><td>The email address you provide, either in the mailing-list form or, optionally, when you download a study guide.</td></tr>
+      <tr><td>Subscribe to the weekly email</td><td>The email address you provide, either in the mailing-list form or, optionally, when you download a study guide. Each subscriber also gets a random unsubscribe code, which is used only to process the unsubscribe link in each email.</td></tr>
       <tr><td>Use the search counter or sign-up forms</td><td>A scrambled (hashed) version of your IP address, used only to limit how often one visitor can use these features. It is not stored with your searches or your account, and older entries are deleted automatically after about two days.</td></tr>
       <tr><td>Visit the site</td><td>Aggregate, anonymous analytics — page views and visit counts. No cookies and no individual tracking are used for this (see "Analytics" below).</td></tr>
     </table>
@@ -176,6 +176,7 @@
       <li><strong>OpenAI</strong> — generates the AI summaries and follow-up chat responses.</li>
       <li><strong>PubMed / NCBI</strong> — the public database MedSumAI searches for articles. No personal data is sent here, only search terms.</li>
       <li><strong>Cloudflare Workers</strong> — runs the backend that connects PubMed and OpenAI to the website. To prevent abuse it counts requests per visitor using a salted hash of your IP address (never the address itself); those counters delete themselves within about an hour.</li>
+      <li><strong>Resend</strong> — delivers the weekly email to people on the mailing list. It receives the recipient's email address and the message, and nothing else.</li>
       <li><strong>GitHub Pages</strong> — hosts this website itself.</li>
       <li><strong>Cloudflare Web Analytics</strong> — provides anonymous, cookieless visit statistics. It does not use tracking cookies or collect personally identifiable information.</li>
     </ul>
