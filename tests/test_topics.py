@@ -72,6 +72,10 @@ for p in built:
     check(f'{name}: has all four summary sections and a Sources list', all(f'id="{i}"' in h for i in ('in-plain-english', 'key-findings', 'how-strong-is-the-evidence', 'limitations-and-caveats', 'sources')))
     check(f'{name}: every claim cites a PubMed link', len(re.findall(r'href="https://pubmed\.ncbi\.nlm\.nih\.gov/\d+/"', h)) >= 4)
 
+idx = open(os.path.join(ROOT, 'topics', 'index.html'), encoding='utf-8').read()
+cards = re.findall(r'<a class="topic-card"[^>]*>', idx)
+check('index: search box, empty state and one searchable card per topic', 'id="topic-search"' in idx and 'id="no-results"' in idx and len(cards) == len(built) and all('data-search="' in c for c in cards), f'{len(cards)} cards vs {len(built)} pages')
+
 fails = [r for r in results if not r[1]]
 print(f'\n{len(results) - len(fails)}/{len(results)} checks passed')
 sys.exit(1 if fails else 0)

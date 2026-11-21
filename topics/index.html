@@ -31,73 +31,119 @@
   <p class="eyebrow">Browse</p>
   <h1>Research topics, <em>explained.</em></h1>
   <p class="lead">Real studies from PubMed, summarized in plain English with the sources linked. Pick a topic, or <a href="/">summarize your own</a>.</p>
-  <div class="pills" role="group" aria-label="Filter by category"><button type="button" class="pill active" data-cat="all" aria-pressed="true">All</button><button type="button" class="pill" data-cat="Neurology" aria-pressed="false">Neurology</button><button type="button" class="pill" data-cat="Mental health" aria-pressed="false">Mental health</button><button type="button" class="pill" data-cat="Oncology" aria-pressed="false">Oncology</button><button type="button" class="pill" data-cat="Infectious disease" aria-pressed="false">Infectious disease</button><button type="button" class="pill" data-cat="Genetics" aria-pressed="false">Genetics</button><button type="button" class="pill" data-cat="Endocrinology" aria-pressed="false">Endocrinology</button><button type="button" class="pill" data-cat="Nutrition &amp; lifestyle" aria-pressed="false">Nutrition &amp; lifestyle</button></div>
+  <div class="search-row" role="search">
+    <label class="sr-only" for="topic-search">Search topics</label>
+    <input id="topic-search" type="search" placeholder="Search topics, e.g. diabetes, sleep, CRISPR" autocomplete="off" maxlength="100"/>
+    <button type="button" id="search-clear" class="search-clear" aria-label="Clear search" hidden>×</button>
+  </div>
+  <div class="pills" role="group" aria-label="Filter by category"><button type="button" class="pill active" data-cat="all" aria-pressed="true">All</button><button type="button" class="pill" data-cat="Neurology" aria-pressed="false">Neurology</button><button type="button" class="pill" data-cat="Mental health" aria-pressed="false">Mental health</button><button type="button" class="pill" data-cat="Cardiovascular" aria-pressed="false">Cardiovascular</button><button type="button" class="pill" data-cat="Oncology" aria-pressed="false">Oncology</button><button type="button" class="pill" data-cat="Infectious disease" aria-pressed="false">Infectious disease</button><button type="button" class="pill" data-cat="Immunology" aria-pressed="false">Immunology</button><button type="button" class="pill" data-cat="Genetics" aria-pressed="false">Genetics</button><button type="button" class="pill" data-cat="Endocrinology" aria-pressed="false">Endocrinology</button><button type="button" class="pill" data-cat="Nutrition &amp; lifestyle" aria-pressed="false">Nutrition &amp; lifestyle</button></div>
+  <p id="result-count" class="result-count" aria-live="polite"></p>
+  <div id="no-results" class="no-results" hidden>
+    <p>No topics match "<strong id="empty-q"></strong>" yet.</p>
+    <p><a id="empty-link" href="/">Summarize it with MedSumAI →</a> It takes about 10 seconds and links the PubMed sources.</p>
+  </div>
   <div class="topic-grid">
-<a class="topic-card" href="/topics/alzheimers-disease-treatment.html" data-cat="Neurology">
+<a class="topic-card" href="/topics/adhd-treatment.html" data-cat="Mental health" data-search="adhd treatment stimulants and beyond mental health adhd treatment stimulant medication adhd treatment research shows stimulant medications like methylphenidate amphetamines and lisdexamfetamine are among the most effective treatments for reducing core adhd symptoms">
+  <span class="rel-cat">Mental health</span>
+  <span class="card-title">ADHD treatment: stimulants and beyond</span>
+  <span class="card-snip">Research shows stimulant medications (like methylphenidate, amphetamines, and lisdexamfetamine) are among the most effective treatments for reducing core ADHD symptoms…</span>
+  <span class="card-meta">8 abstracts · November 20, 2026</span>
+</a>
+<a class="topic-card" href="/topics/alzheimers-disease-treatment.html" data-cat="Neurology" data-search="alzheimer disease treatment neurology alzheimer disease treatment alzheimers disease treatment research shows several different approaches to treating or slowing alzheimer disease ad">
   <span class="rel-cat">Neurology</span>
   <span class="card-title">Alzheimer disease treatment</span>
   <span class="card-snip">Research shows several different approaches to treating or slowing Alzheimer disease (AD).</span>
   <span class="card-meta">8 abstracts · November 19, 2026</span>
 </a>
-<a class="topic-card" href="/topics/antibiotic-resistance.html" data-cat="Infectious disease">
+<a class="topic-card" href="/topics/antibiotic-resistance.html" data-cat="Infectious disease" data-search="antibiotic resistance infectious disease antibiotic resistance antibiotic resistance antibiotic resistance is widespread rising over time and occurs across clinical pathogens and environmental bacteria">
   <span class="rel-cat">Infectious disease</span>
   <span class="card-title">Antibiotic resistance</span>
   <span class="card-snip">Antibiotic resistance is widespread, rising over time, and occurs across clinical pathogens and environmental bacteria.</span>
   <span class="card-meta">8 abstracts · November 19, 2026</span>
 </a>
-<a class="topic-card" href="/topics/crispr-sickle-cell-disease.html" data-cat="Genetics">
+<a class="topic-card" href="/topics/crispr-sickle-cell-disease.html" data-cat="Genetics" data-search="crispr gene therapy for sickle cell disease genetics crispr gene therapy sickle cell disease crispr sickle cell disease clinical research using crispr based editing of patients own blood forming hematopoietic stem cells shows promising results for sickle cell disease scd several">
   <span class="rel-cat">Genetics</span>
   <span class="card-title">CRISPR gene therapy for sickle cell disease</span>
   <span class="card-snip">Clinical research using CRISPR-based editing of patients&#x27; own blood‑forming (hematopoietic) stem cells shows promising results for sickle cell disease (SCD): several…</span>
   <span class="card-meta">8 abstracts · November 19, 2026</span>
 </a>
-<a class="topic-card" href="/topics/cancer-immunotherapy.html" data-cat="Oncology">
+<a class="topic-card" href="/topics/cancer-immunotherapy.html" data-cat="Oncology" data-search="cancer immunotherapy oncology cancer immunotherapy cancer immunotherapy recent research shows immunotherapy is an important and effective class of cancer treatments with clear benefits in some cancers and ongoing work to extend and improve">
   <span class="rel-cat">Oncology</span>
   <span class="card-title">Cancer immunotherapy</span>
   <span class="card-snip">Recent research shows immunotherapy is an important and effective class of cancer treatments, with clear benefits in some cancers and ongoing work to extend and improve…</span>
   <span class="card-meta">8 abstracts · November 19, 2026</span>
 </a>
-<a class="topic-card" href="/topics/glp-1-drugs-obesity.html" data-cat="Endocrinology">
+<a class="topic-card" href="/topics/concussion-recovery.html" data-cat="Neurology" data-search="concussion recovery in teens neurology concussion recovery adolescents concussion recovery research on adolescents recovering from sport related concussion shows most recover within a few weeks but a substantial minority have symptoms that last months">
+  <span class="rel-cat">Neurology</span>
+  <span class="card-title">Concussion recovery in teens</span>
+  <span class="card-snip">Research on adolescents recovering from sport-related concussion shows most recover within a few weeks, but a substantial minority have symptoms that last months.</span>
+  <span class="card-meta">8 abstracts · November 20, 2026</span>
+</a>
+<a class="topic-card" href="/topics/peanut-allergy-early-introduction.html" data-cat="Immunology" data-search="early peanut introduction and peanut allergy immunology early peanut introduction infants allergy prevention peanut allergy early introduction randomized trials and a systematic review show that introducing peanut containing foods into an infant s diet beginning in the first year often targeted around 4 11">
+  <span class="rel-cat">Immunology</span>
+  <span class="card-title">Early peanut introduction and peanut allergy</span>
+  <span class="card-snip">Randomized trials and a systematic review show that introducing peanut-containing foods into an infant’s diet beginning in the first year — often targeted around 4–11…</span>
+  <span class="card-meta">8 abstracts · November 20, 2026</span>
+</a>
+<a class="topic-card" href="/topics/glp-1-drugs-obesity.html" data-cat="Endocrinology" data-search="glp 1 drugs and obesity endocrinology glp 1 drugs obesity glp 1 drugs obesity clinical trials show that glp 1 receptor agonist drugs especially semaglutide given weekly by injection or daily orally in trials produce substantial average weight">
   <span class="rel-cat">Endocrinology</span>
   <span class="card-title">GLP-1 drugs and obesity</span>
   <span class="card-snip">Clinical trials show that GLP-1 receptor agonist drugs (especially semaglutide, given weekly by injection or daily orally in trials) produce substantial average weight…</span>
   <span class="card-meta">8 abstracts · November 19, 2026</span>
 </a>
-<a class="topic-card" href="/topics/gut-microbiome-and-health.html" data-cat="Nutrition &amp; lifestyle">
+<a class="topic-card" href="/topics/gut-microbiome-and-health.html" data-cat="Nutrition &amp; lifestyle" data-search="gut microbiome and health nutrition lifestyle gut microbiome health gut microbiome and health research shows the gut microbiome the community of microbes living in the gut is strongly influenced by antibiotics diet and maternal factors and that those changes">
   <span class="rel-cat">Nutrition &amp; lifestyle</span>
   <span class="card-title">Gut microbiome and health</span>
   <span class="card-snip">Research shows the gut microbiome (the community of microbes living in the gut) is strongly influenced by antibiotics, diet, and maternal factors, and that those changes…</span>
   <span class="card-meta">8 abstracts · November 19, 2026</span>
 </a>
-<a class="topic-card" href="/topics/sleep-deprivation-health-effects.html" data-cat="Nutrition &amp; lifestyle">
+<a class="topic-card" href="/topics/sleep-deprivation-health-effects.html" data-cat="Nutrition &amp; lifestyle" data-search="health effects of sleep deprivation nutrition lifestyle sleep deprivation health effects sleep deprivation health effects research shows that not getting enough sleep harms many aspects of health and performance it worsens cognitive functions attention memory decision making increases">
   <span class="rel-cat">Nutrition &amp; lifestyle</span>
   <span class="card-title">Health effects of sleep deprivation</span>
   <span class="card-snip">Research shows that not getting enough sleep harms many aspects of health and performance: it worsens cognitive functions (attention, memory, decision-making), increases…</span>
   <span class="card-meta">8 abstracts · November 19, 2026</span>
 </a>
-<a class="topic-card" href="/topics/intermittent-fasting.html" data-cat="Nutrition &amp; lifestyle">
+<a class="topic-card" href="/topics/intermittent-fasting.html" data-cat="Nutrition &amp; lifestyle" data-search="intermittent fasting nutrition lifestyle intermittent fasting intermittent fasting research in animals and humans suggests intermittent fasting if can produce weight loss and improve some metabolic and cognitive biomarkers and it alters immune">
   <span class="rel-cat">Nutrition &amp; lifestyle</span>
   <span class="card-title">Intermittent fasting</span>
   <span class="card-snip">Research in animals and humans suggests intermittent fasting (IF) can produce weight loss and improve some metabolic and cognitive biomarkers, and it alters immune,…</span>
   <span class="card-meta">8 abstracts · November 19, 2026</span>
 </a>
-<a class="topic-card" href="/topics/long-covid.html" data-cat="Infectious disease">
+<a class="topic-card" href="/topics/long-covid.html" data-cat="Infectious disease" data-search="long covid infectious disease long covid long covid research shows that many people experience persistent symptoms after covid infection commonly called long covid most often fatigue and cognitive problems and that">
   <span class="rel-cat">Infectious disease</span>
   <span class="card-title">Long COVID</span>
   <span class="card-snip">Research shows that many people experience persistent symptoms after covid infection (commonly called long COVID), most often fatigue and cognitive problems, and that…</span>
   <span class="card-meta">8 abstracts · November 19, 2026</span>
 </a>
-<a class="topic-card" href="/topics/type-2-diabetes-treatment.html" data-cat="Endocrinology">
+<a class="topic-card" href="/topics/migraine-treatment.html" data-cat="Neurology" data-search="migraine prevention cgrp drugs neurology migraine cgrp treatment prevention migraine treatment research shows that drugs targeting calcitonin gene related peptide cgrp including monoclonal antibodies mabs and small molecule cgrp receptor antagonists called">
+  <span class="rel-cat">Neurology</span>
+  <span class="card-title">Migraine prevention: CGRP drugs</span>
+  <span class="card-snip">Research shows that drugs targeting calcitonin gene‑related peptide (CGRP) — including monoclonal antibodies (mAbs) and small‑molecule CGRP receptor antagonists (called…</span>
+  <span class="card-meta">8 abstracts · November 20, 2026</span>
+</a>
+<a class="topic-card" href="/topics/statins-and-cholesterol.html" data-cat="Cardiovascular" data-search="statins and ldl cholesterol cardiovascular statins ldl cholesterol cardiovascular prevention statins and cholesterol randomized trials show that lowering ldl cholesterol ldl c reduces major cardiovascular events">
+  <span class="rel-cat">Cardiovascular</span>
+  <span class="card-title">Statins and LDL cholesterol</span>
+  <span class="card-snip">Randomized trials show that lowering LDL cholesterol (LDL-C) reduces major cardiovascular events.</span>
+  <span class="card-meta">8 abstracts · November 20, 2026</span>
+</a>
+<a class="topic-card" href="/topics/type-2-diabetes-treatment.html" data-cat="Endocrinology" data-search="type 2 diabetes treatment endocrinology type 2 diabetes treatment type 2 diabetes treatment research summarized in the provided abstracts shows several non pharmacologic and adjunctive treatment approaches for type 2 diabetes t2dm structured exercise">
   <span class="rel-cat">Endocrinology</span>
   <span class="card-title">Type 2 diabetes treatment</span>
   <span class="card-snip">Research summarized in the provided abstracts shows several non-pharmacologic and adjunctive treatment approaches for type 2 diabetes (T2DM): structured exercise…</span>
   <span class="card-meta">8 abstracts · November 19, 2026</span>
 </a>
-<a class="topic-card" href="/topics/vitamin-d-and-depression.html" data-cat="Mental health">
+<a class="topic-card" href="/topics/vitamin-d-and-depression.html" data-cat="Mental health" data-search="vitamin d and depression mental health vitamin d and depression vitamin d and depression research shows an association between low vitamin d levels and higher rates of depressive symptoms and randomized trials of vitamin d supplementation show small">
   <span class="rel-cat">Mental health</span>
   <span class="card-title">Vitamin D and depression</span>
   <span class="card-snip">Research shows an association between low vitamin D levels and higher rates of depressive symptoms, and randomized trials of vitamin D supplementation show small…</span>
   <span class="card-meta">8 abstracts · November 19, 2026</span>
+</a>
+<a class="topic-card" href="/topics/mrna-vaccines.html" data-cat="Infectious disease" data-search="mrna vaccines effectiveness and safety infectious disease mrna vaccine effectiveness safety mrna vaccines the randomized trials and a meta analysis in these abstracts show that mrna vaccines for covid 19 influenza rsv and combination vaccines produce strong protection">
+  <span class="rel-cat">Infectious disease</span>
+  <span class="card-title">mRNA vaccines: effectiveness and safety</span>
+  <span class="card-snip">The randomized trials and a meta-analysis in these abstracts show that mRNA vaccines (for COVID-19, influenza, RSV, and combination vaccines) produce strong protection…</span>
+  <span class="card-meta">8 abstracts · November 20, 2026</span>
 </a>
   </div>
 </main>
@@ -108,12 +154,29 @@
 <script>
 (function(){
   var pills=[].slice.call(document.querySelectorAll('.pill')), cards=[].slice.call(document.querySelectorAll('.topic-card'));
+  var box=document.getElementById('topic-search'), empty=document.getElementById('no-results'), count=document.getElementById('result-count'), clear=document.getElementById('search-clear');
+  var cat='all';
+  function norm(s){return (s||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim()}
+  function apply(){
+    var q=norm(box.value), words=q?q.split(' '):[], shown=0;
+    cards.forEach(function(card){
+      var hay=card.getAttribute('data-search');
+      var ok=(cat==='all'||card.getAttribute('data-cat')===cat)&&words.every(function(w){return hay.indexOf(w)!==-1});
+      card.hidden=!ok; if(ok)shown++;
+    });
+    empty.hidden=shown!==0; clear.hidden=!box.value;
+    count.textContent=shown+(shown===1?' topic':' topics');
+    var qs=box.value.trim(); if(empty.hidden===false){document.getElementById('empty-q').textContent=qs; document.getElementById('empty-link').href='/?topic='+encodeURIComponent(qs)}
+  }
   pills.forEach(function(p){p.addEventListener('click',function(){
     pills.forEach(function(x){x.classList.remove('active');x.setAttribute('aria-pressed','false')});
     p.classList.add('active');p.setAttribute('aria-pressed','true');
-    var c=p.getAttribute('data-cat');
-    cards.forEach(function(card){card.hidden=!(c==='all'||card.getAttribute('data-cat')===c)});
+    cat=p.getAttribute('data-cat'); apply();
   })});
+  box.addEventListener('input',apply);
+  clear.addEventListener('click',function(){box.value='';apply();box.focus()});
+  var init=new URLSearchParams(location.search).get('q'); if(init){box.value=init.slice(0,100)}
+  apply();
 })();
 </script>
 </body>
