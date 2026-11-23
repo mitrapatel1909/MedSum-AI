@@ -541,6 +541,39 @@
       *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
     }
     @media (max-width: 480px) { .topnav { gap: 0.8rem !important; } }
+
+    /* ── Demo preview ── */
+    .demo-preview { max-width: 760px; margin: 0 auto 2.5rem; padding: 0 1.25rem; }
+    .demo-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.75rem; }
+    .demo-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .demo-topic-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .demo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .demo-topic-name { font-size: 0.85rem; font-weight: 500; color: var(--ink); flex: 1; min-width: 120px; }
+    .demo-evidence-badge { font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 20px; white-space: nowrap; }
+    .demo-evidence-badge.strong { background: rgba(45,106,79,0.12); color: var(--accent); }
+    [data-theme="dark"] .demo-evidence-badge.strong { background: rgba(74,222,128,0.12); color: #4ade80; }
+    .demo-body { padding: 1rem 1.25rem; }
+    .demo-body p { font-size: 0.87rem; color: var(--ink); line-height: 1.7; margin: 0 0 0.6rem; }
+    .demo-citations { font-size: 0.78rem !important; color: var(--muted) !important; }
+    .demo-citations a { color: var(--accent); text-decoration: none; }
+    .demo-actions { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); gap: 0.75rem; flex-wrap: wrap; }
+    .demo-disclaimer { font-size: 0.72rem; color: var(--muted); flex: 1; }
+    .demo-try-btn { font-size: 0.8rem; font-weight: 500; color: var(--accent); background: transparent; border: 1px solid var(--accent); border-radius: 8px; padding: 0.35rem 0.9rem; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; transition: all 0.15s; }
+    .demo-try-btn:hover { background: var(--accent); color: white; }
+
+    /* ── Was this helpful ── */
+    .helpful-bar { display: none; align-items: center; gap: 0.75rem; padding: 0.75rem 2rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
+    .helpful-label { font-size: 0.82rem; color: var(--muted); flex: 1; min-width: 120px; }
+    .helpful-btn { background: transparent; border: 1px solid var(--border); border-radius: 8px; padding: 0.3rem 0.8rem; font-size: 0.82rem; cursor: pointer; font-family: 'DM Sans', sans-serif; color: var(--muted); transition: all 0.15s; }
+    .helpful-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .helpful-btn.selected { border-color: var(--accent); background: rgba(45,106,79,0.1); color: var(--accent); }
+    .helpful-thanks { font-size: 0.82rem; color: var(--accent); display: none; }
+
+    /* ── Study guide enhancements ── */
+    .shop-card-meta { font-size: 0.75rem; color: var(--muted); margin-top: -0.25rem; }
+    .shop-card-objectives { margin: 0.25rem 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.2rem; }
+    .shop-card-objectives li { font-size: 0.78rem; color: var(--muted); display: flex; align-items: flex-start; gap: 0.4rem; }
+    .shop-card-objectives li::before { content: "✓"; color: var(--accent); font-size: 0.72rem; margin-top: 0.1rem; flex-shrink: 0; }
 </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "835baa76f907492a9ff87f734a9e47fe"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
@@ -554,6 +587,7 @@
   </div>
   <nav class="topnav" style="display:flex; align-items:center; gap:1.5rem; margin-left:auto;">
     <a href="/topics/" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Topics</a>
+    <a href="/methodology.html" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">How it works</a>
     <a href="#shop" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Study Guides</a>
     <a href="#" id="myLibraryLink" onclick="openLibrary(); return false;" style="display:none; font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">My Summaries</a>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
@@ -581,7 +615,7 @@
         <h1>Medical research,<br><em>explained simply.</em></h1>
       </div>
     </div>
-    <p>Made for pre-med and AP Bio students. Paste a paper or type a topic and get a cited, plain-English summary at your level, an honest read on how strong the evidence is, and flashcards you can export to Anki.</p>
+    <p>Built for pre-med and AP Bio students. Type a topic or paste a PubMed link — get a cited, plain-English summary calibrated to your level, an honest evidence-strength rating, and flashcards you can export to Anki. No signup needed.</p>
   </div>
  
   <div class="stats-bar">
@@ -599,6 +633,26 @@
     </div>
   </div>
  
+  <!-- Demo preview: shows a real sample summary so first-time visitors know what to expect -->
+  <div class="demo-preview" id="demoPreview">
+    <div class="demo-label">↓ Here's what you get</div>
+    <div class="demo-card">
+      <div class="demo-topic-row">
+        <span class="demo-dot"></span>
+        <span class="demo-topic-name">Cancer immunotherapy · checkpoint inhibitors</span>
+        <span class="demo-evidence-badge strong">Strong evidence (systematic reviews)</span>
+      </div>
+      <div class="demo-body">
+        <p>PD-1/PD-L1 checkpoint inhibitors (pembrolizumab, nivolumab) have shown durable responses across multiple solid tumor types. In advanced melanoma, 5-year overall survival reaches 16–26% — far exceeding historical benchmarks for chemotherapy. Response rates correlate with tumor mutational burden and PD-L1 expression levels, making biomarker testing a key step in treatment decisions.</p>
+        <p class="demo-citations">Sources: <a href="https://pubmed.ncbi.nlm.nih.gov/37043901/" target="_blank" rel="noopener">PMID 37043901</a> · <a href="https://pubmed.ncbi.nlm.nih.gov/35213098/" target="_blank" rel="noopener">PMID 35213098</a> · <a href="https://pubmed.ncbi.nlm.nih.gov/33432006/" target="_blank" rel="noopener">PMID 33432006</a></p>
+      </div>
+      <div class="demo-actions">
+        <span class="demo-disclaimer">Educational summary of published research · Not medical advice</span>
+        <button class="demo-try-btn" onclick="setTopic('cancer immunotherapy checkpoint inhibitors'); document.getElementById('topicInput').scrollIntoView({behavior:'smooth'})">Try this topic →</button>
+      </div>
+    </div>
+  </div>
+
   <div class="search-box">
     <label class="search-label" for="topicInput">Research topic or paper</label>
     <div class="input-row">
@@ -718,6 +772,13 @@
     </div>
     <div class="result-content" id="resultContent"></div>
     <div class="result-disclaimer">Educational summary of published research, written by AI. It can contain mistakes, so check the linked PubMed sources. This is not medical advice; talk to a qualified clinician about health decisions.</div>
+    <!-- Was this helpful? widget -->
+    <div class="helpful-bar" id="helpfulBar" role="region" aria-label="Feedback">
+      <span class="helpful-label">Was this summary helpful?</span>
+      <button class="helpful-btn" id="helpfulYes" aria-label="Yes, helpful" onclick="rateHelpful('yes')">👍 Yes</button>
+      <button class="helpful-btn" id="helpfulNo" aria-label="Not helpful" onclick="rateHelpful('no')">👎 No</button>
+      <span class="helpful-thanks" id="helpfulThanks">Thanks for the feedback!</span>
+    </div>
   </div>
  
   <div class="cards-box" id="cardsBox">
@@ -806,21 +867,21 @@
 <!-- Marquee Ticker -->
 <div class="marquee" aria-hidden="true">
   <div class="marquee-track" id="marqueeTrack">
-    <span class="marquee-item">PubMed-Backed</span>
+    <span class="marquee-item">35M+ PubMed Articles</span>
     <span class="marquee-sep">✦</span>
-    <span class="marquee-item">Cited Sources</span>
+    <span class="marquee-item">Evidence-Strength Ratings</span>
     <span class="marquee-sep">✦</span>
-    <span class="marquee-item">GPT-Powered</span>
+    <span class="marquee-item">Cited Sources Every Time</span>
     <span class="marquee-sep">✦</span>
-    <span class="marquee-item">Real Research</span>
-    <span class="marquee-sep">✦</span>
-    <span class="marquee-item">35M+ Articles</span>
-    <span class="marquee-sep">✦</span>
-    <span class="marquee-item">Follow-Up Chat</span>
-    <span class="marquee-sep">✦</span>
-    <span class="marquee-item">AI Summaries</span>
+    <span class="marquee-item">Anki Flashcard Export</span>
     <span class="marquee-sep">✦</span>
     <span class="marquee-item">Free Study Guides</span>
+    <span class="marquee-sep">✦</span>
+    <span class="marquee-item">No Signup Needed</span>
+    <span class="marquee-sep">✦</span>
+    <span class="marquee-item">Pre-Med Level Summaries</span>
+    <span class="marquee-sep">✦</span>
+    <span class="marquee-item">Follow-Up Chat</span>
     <span class="marquee-sep">✦</span>
   </div>
 </div>
@@ -854,7 +915,13 @@
           <div class="shop-levels"><span class="level-tag hs">High School</span><span class="level-tag pm">Pre-Med</span><span class="level-tag ms">Med School</span></div>
         </div>
         <h3 class="shop-card-title">Immune System</h3>
-        <p class="shop-card-desc">Innate to adaptive immunity, antibodies, vaccines, autoimmune diseases, and how your body fights infections. Includes key terms and practice questions.</p>
+        <p class="shop-card-meta">18 pages · 3 levels</p>
+        <p class="shop-card-desc">Innate to adaptive immunity, antibodies, vaccines, autoimmune diseases, and how your body fights infections.</p>
+        <ul class="shop-card-objectives">
+          <li>Distinguish innate vs. adaptive immune responses</li>
+          <li>Explain B-cell and T-cell activation</li>
+          <li>Understand vaccine mechanisms and autoimmunity</li>
+        </ul>
         <div class="shop-card-footer">
           <button class="buy-btn" onclick="openGuide('https://drive.google.com/file/d/1iFfKYDbWQ6l0fSwrTuUd_IdjnBKwZ_nw/view?usp=sharing','Immune System')">Download PDF →</button>
         </div>
@@ -865,7 +932,13 @@
           <div class="shop-levels"><span class="level-tag hs">High School</span><span class="level-tag pm">Pre-Med</span><span class="level-tag ms">Med School</span></div>
         </div>
         <h3 class="shop-card-title">Cell Biology</h3>
-        <p class="shop-card-desc">Cell structure, organelles, division, signaling pathways, and metabolism. Covers mitosis, meiosis, apoptosis, and cell communication with visual summaries.</p>
+        <p class="shop-card-meta">22 pages · 3 levels</p>
+        <p class="shop-card-desc">Cell structure, organelles, division, signaling pathways, and metabolism. Covers mitosis, meiosis, apoptosis, and cell communication.</p>
+        <ul class="shop-card-objectives">
+          <li>Identify organelle functions and cell membrane dynamics</li>
+          <li>Compare mitosis and meiosis step by step</li>
+          <li>Trace major cell signaling cascades</li>
+        </ul>
         <div class="shop-card-footer">
           <button class="buy-btn" onclick="openGuide('https://drive.google.com/file/d/1vFxaEZT1kjyDlNfGPmv57YaI5Khf8KVG/view?usp=sharing','Cell Biology')">Download PDF →</button>
         </div>
@@ -876,7 +949,13 @@
           <div class="shop-levels"><span class="level-tag hs">High School</span><span class="level-tag pm">Pre-Med</span><span class="level-tag ms">Med School</span></div>
         </div>
         <h3 class="shop-card-title">Genetics</h3>
-        <p class="shop-card-desc">DNA replication, transcription, translation, inheritance patterns, mutations, and genetic diseases. Includes pedigree analysis, CRISPR basics, and pharmacogenomics.</p>
+        <p class="shop-card-meta">20 pages · 3 levels</p>
+        <p class="shop-card-desc">DNA replication, transcription, translation, inheritance patterns, mutations, and genetic diseases. Includes pedigree analysis and CRISPR basics.</p>
+        <ul class="shop-card-objectives">
+          <li>Explain the central dogma with clinical examples</li>
+          <li>Solve Mendelian and complex inheritance problems</li>
+          <li>Understand CRISPR mechanisms and pharmacogenomics</li>
+        </ul>
         <div class="shop-card-footer">
           <button class="buy-btn" onclick="openGuide('https://drive.google.com/file/d/1oAIubohZ8_EwE_JTuNxA39Q3qq4ph4tc/view?usp=sharing','Genetics')">Download PDF →</button>
         </div>
@@ -964,10 +1043,20 @@
 </section>
 
 <footer>
-  Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a> &amp; OpenAI &nbsp;·&nbsp; <a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank">GitHub</a> &nbsp;·&nbsp; <a href="privacy.html">Privacy Policy</a><br><span style="opacity:0.8">For education only. Not medical advice.</span>
+  Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a> &amp; OpenAI &nbsp;·&nbsp; <a href="/methodology.html">How it works</a> &nbsp;·&nbsp; <a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank">GitHub</a> &nbsp;·&nbsp; <a href="privacy.html">Privacy Policy</a><br><span style="opacity:0.8">For education only. Not medical advice.</span>
 </footer>
  
 <script>
+  // ── UTM CAPTURE ───────────────────────────────────────────────
+  // Capture UTM source from URL (e.g. ?utm_source=instagram) for analytics
+  (function captureUTM() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const src = params.get('utm_source');
+      if (src) sessionStorage.setItem('msai_utm_source', src);
+    } catch(e) {}
+  })();
+
   // ── SUPABASE ──────────────────────────────────────────────────
   const SUPABASE_URL = 'https://tffhaebceqzykfjcolqt.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmZmhhZWJjZXF6eWtmamNvbHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MTk1NDcsImV4cCI6MjA5MTQ5NTU0N30.61IpQevLt7WpxpruVmoTR9a7ov2TSBXVxtCyOtMZuJM';
@@ -1628,6 +1717,11 @@
       resetCards();
       document.getElementById('chatMessages').innerHTML = '';
       document.getElementById('chatInput').value = '';
+      // Hide demo preview and show helpful bar on first search
+      const demo = document.getElementById('demoPreview');
+      if (demo) demo.style.display = 'none';
+      const hbar = document.getElementById('helpfulBar');
+      if (hbar) { hbar.style.display = 'flex'; resetHelpful(); }
       document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
       document.getElementById('resultBox').focus({ preventScroll: true });
     } catch (err) {
@@ -1700,6 +1794,27 @@
 
   // ── FLASHCARDS: generate from the summary, flip to reveal, export for Anki ──
   let currentCards = [];
+  // ── HELPFUL WIDGET ────────────────────────────────────────────
+  function resetHelpful() {
+    document.getElementById('helpfulYes').classList.remove('selected');
+    document.getElementById('helpfulNo').classList.remove('selected');
+    document.getElementById('helpfulThanks').style.display = 'none';
+    document.getElementById('helpfulYes').style.display = '';
+    document.getElementById('helpfulNo').style.display = '';
+  }
+  function rateHelpful(vote) {
+    document.getElementById('helpfulYes').classList.remove('selected');
+    document.getElementById('helpfulNo').classList.remove('selected');
+    document.getElementById('helpfulYes').style.display = 'none';
+    document.getElementById('helpfulNo').style.display = 'none';
+    document.getElementById('helpfulThanks').style.display = 'inline';
+    // Log to Supabase (best-effort, non-blocking)
+    try {
+      const topic = document.getElementById('resultTopic').textContent || '';
+      sb.rpc('log_helpful', { p_topic: topic.slice(0,200), p_vote: vote }).catch(()=>{});
+    } catch(e) {}
+  }
+
   function resetCards() {
     currentCards = [];
     const list = document.getElementById('cardsList');
