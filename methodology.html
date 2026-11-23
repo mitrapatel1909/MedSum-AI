@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How MedSumAI Works · Methodology</title>
+  <meta name="description" content="How MedSumAI sources, summarizes, and rates the strength of biomedical research from PubMed." />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f9f7f4;
+      --card: #ffffff;
+      --ink: #1a1a1a;
+      --muted: #6b7280;
+      --accent: #2d6a4f;
+      --border: #e5e7eb;
+      --radius: 12px;
+    }
+    [data-theme="dark"] {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --ink: #e8e8e8;
+      --muted: #9ca3af;
+      --accent: #4ade80;
+      --border: #2d3141;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      display: flex; align-items: center; gap: 1.5rem;
+      height: 56px;
+    }
+    .nav-logo { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--ink); text-decoration: none; }
+    .nav-links { display: flex; gap: 1.25rem; margin-left: auto; }
+    .nav-links a { font-size: 0.85rem; color: var(--muted); text-decoration: none; transition: color 0.15s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--accent); }
+
+    /* ── PAGE LAYOUT ── */
+    .page-wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+    .page-eyebrow {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.75rem;
+    }
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.9rem, 4vw, 2.6rem);
+      line-height: 1.2;
+      color: var(--ink);
+      margin-bottom: 1rem;
+    }
+    .page-lead {
+      font-size: 1.05rem; color: var(--muted); margin-bottom: 2.5rem;
+      max-width: 580px;
+    }
+
+    /* ── SECTIONS ── */
+    .method-section {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      padding: 1.75rem 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .method-step {
+      display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem;
+    }
+    .method-step:last-child { margin-bottom: 0; }
+    .step-num {
+      flex-shrink: 0;
+      width: 2rem; height: 2rem;
+      border-radius: 50%;
+      background: rgba(45,106,79,0.1);
+      color: var(--accent);
+      font-size: 0.8rem; font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 0.1rem;
+    }
+    [data-theme="dark"] .step-num { background: rgba(74,222,128,0.1); }
+    .step-body h3 {
+      font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 0.3rem;
+    }
+    .step-body p { font-size: 0.88rem; color: var(--muted); line-height: 1.65; }
+    .step-body code {
+      font-family: 'DM Mono', monospace; font-size: 0.82rem;
+      background: rgba(45,106,79,0.08); color: var(--accent);
+      padding: 0.1rem 0.4rem; border-radius: 4px;
+    }
+
+    h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.35rem; color: var(--ink);
+      margin-bottom: 1rem;
+    }
+
+    /* ── EVIDENCE TABLE ── */
+    .evidence-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.85rem; }
+    .evidence-table th {
+      text-align: left; padding: 0.5rem 0.75rem;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); border-bottom: 1px solid var(--border);
+    }
+    .evidence-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--ink); vertical-align: top; }
+    .evidence-table tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block; padding: 0.15rem 0.55rem; border-radius: 20px;
+      font-size: 0.72rem; font-weight: 600; white-space: nowrap;
+    }
+    .badge-strong { background: rgba(45,106,79,0.12); color: var(--accent); }
+    .badge-moderate { background: rgba(234,179,8,0.12); color: #854d0e; }
+    .badge-limited { background: rgba(107,114,128,0.12); color: var(--muted); }
+    .badge-mixed { background: rgba(239,68,68,0.1); color: #991b1b; }
+    [data-theme="dark"] .badge-moderate { color: #fbbf24; }
+    [data-theme="dark"] .badge-mixed { color: #f87171; }
+
+    /* ── DISCLAIMER BOX ── */
+    .disclaimer-box {
+      border: 1px solid var(--border); border-radius: var(--radius); background: var(--card);
+      padding: 1.25rem 1.5rem; margin-top: 1.5rem;
+      display: flex; gap: 0.75rem; align-items: flex-start;
+    }
+    .disclaimer-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .disclaimer-box p { font-size: 0.85rem; color: var(--muted); line-height: 1.65; }
+    .disclaimer-box strong { color: var(--ink); }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center; padding: 2rem 1rem;
+      font-size: 0.8rem; color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* ── DARK TOGGLE ── */
+    .theme-btn {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.3rem 0.6rem; cursor: pointer; font-size: 0.85rem;
+      color: var(--muted); font-family: 'DM Sans', sans-serif;
+      margin-left: auto;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="/">MedSumAI</a>
+    <div class="nav-links">
+      <a href="/topics/">Topics</a>
+      <a href="/index.html#shop">Study Guides</a>
+      <a href="/methodology.html" class="active">How it works</a>
+    </div>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle dark mode">🌙</button>
+  </nav>
+
+  <main class="page-wrap">
+    <div class="page-eyebrow">Methodology</div>
+    <h1>How MedSumAI works</h1>
+    <p class="page-lead">Every summary starts with real research. Here's what happens between your query and the plain-English explanation you get back.</p>
+
+    <!-- STEP BY STEP -->
+    <div class="method-section">
+      <h2>The pipeline, step by step</h2>
+
+      <div class="method-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Query → PubMed search</h3>
+          <p>Your topic is sent to the <strong>PubMed E-utilities API</strong> — the same database used by researchers worldwide, with over 35 million biomedical citations. MedSumAI searches by relevance and recency, pulling the top results for your query.</p>
+        </div>
+      </div>
+
+      <div class="method-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Abstract retrieval</h3>
+          <p>MedSumAI fetches the structured abstracts of the top articles: title, authors, journal, year, and the abstract text itself. It doesn't have access to full-text PDFs — only what PubMed's public API exposes. Each article's PubMed ID (<code>PMID</code>) is preserved so citations can link directly to the source.</p>
+        </div>
+      </div>
+
+      <div class="method-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>AI summarization (GPT-4o)</h3>
+          <p>The retrieved abstracts are passed to <strong>OpenAI's GPT-4o</strong> with a structured prompt that asks it to: synthesize the findings across papers, write at a pre-med/AP Biology level, rate the overall evidence strength, note key limitations, and include every PubMed citation by PMID. The AI is explicitly instructed not to add information not present in the abstracts.</p>
+        </div>
+      </div>
+
+      <div class="method-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Rendering &amp; citation linking</h3>
+          <p>The summary is rendered with marked.js and sanitized with DOMPurify before display. Every <code>PMID</code> reference in the output is automatically hyperlinked to <code>pubmed.ncbi.nlm.nih.gov/[PMID]</code>, so you can click through to the original abstract or full paper.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVIDENCE RATINGS -->
+    <div class="method-section">
+      <h2>Evidence strength ratings</h2>
+      <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1rem;">Each summary includes a rating that reflects the type and consistency of studies found. These follow standard evidence hierarchy conventions used in clinical medicine:</p>
+      <table class="evidence-table">
+        <thead>
+          <tr>
+            <th>Rating</th>
+            <th>What it means</th>
+            <th>Typical source types</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-strong">Strong</span></td>
+            <td>Multiple high-quality studies with consistent findings</td>
+            <td>Systematic reviews, meta-analyses, large RCTs</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-moderate">Moderate</span></td>
+            <td>Reasonably consistent evidence, but some gaps</td>
+            <td>Smaller RCTs, prospective cohort studies</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-limited">Limited</span></td>
+            <td>Early or sparse evidence; conclusions are preliminary</td>
+            <td>Observational studies, case series, animal models</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-mixed">Mixed / Conflicting</span></td>
+            <td>Studies exist but disagree on outcomes or direction</td>
+            <td>Various study types with contradictory results</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- WHAT IT IS / ISN'T -->
+    <div class="method-section">
+      <h2>What MedSumAI is — and isn't</h2>
+      <div class="method-step">
+        <div class="step-num">✓</div>
+        <div class="step-body">
+          <h3>Designed for learning</h3>
+          <p>MedSumAI is built to help students, curious readers, and researchers quickly understand what the published literature says about a topic. It makes PubMed abstracts accessible without replacing them.</p>
+        </div>
+      </div>
+      <div class="method-step">
+        <div class="step-num">✗</div>
+        <div class="step-body">
+          <h3>Not a clinical tool</h3>
+          <p>Summaries are educational. They are not a substitute for clinical judgment, a qualified clinician, or reading the full papers yourself. The AI can make mistakes; always verify findings against the linked PubMed sources.</p>
+        </div>
+      </div>
+      <div class="method-step">
+        <div class="step-num">✗</div>
+        <div class="step-body">
+          <h3>No full-text access</h3>
+          <p>MedSumAI summarizes only what PubMed's public API returns — typically the structured abstract. It cannot access paywalled full-text articles. For detailed methodology, results tables, or supplementary data, follow the PMID link to PubMed and access the full paper through your institution or PubMed Central.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISCLAIMER -->
+    <div class="disclaimer-box">
+      <div class="disclaimer-icon">⚠️</div>
+      <p><strong>Educational use only.</strong> Nothing on MedSumAI is medical advice. If you have questions about your own health, please consult a qualified healthcare professional. AI-generated summaries can contain errors — always check the linked PubMed sources before drawing conclusions.</p>
+    </div>
+  </main>
+
+  <footer>
+    <p><a href="/">Home</a> &nbsp;·&nbsp; <a href="/topics/">Topics</a> &nbsp;·&nbsp; <a href="/privacy.html">Privacy</a> &nbsp;·&nbsp; <a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank">GitHub</a></p>
+    <p style="margin-top:0.5rem">Powered by PubMed &amp; OpenAI · For education only · Not medical advice</p>
+  </footer>
+
+  <!-- Cloudflare Web Analytics -->
+  <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "835baa76f907492a9ff87f734a9e47fe"}'></script>
+
+  <script>
+    // Dark mode
+    const saved = localStorage.getItem('msai_theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    function toggleTheme() {
+      const cur = document.documentElement.getAttribute('data-theme');
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('msai_theme', next);
+      document.getElementById('themeBtn').textContent = next === 'dark' ? '☀️' : '🌙';
+    }
+    if (saved === 'dark') document.getElementById('themeBtn').textContent = '☀️';
+  </script>
+</body>
+</html>
