@@ -197,7 +197,7 @@
         <div class="step-num">3</div>
         <div class="step-body">
           <h3>AI summarization (GPT-4o)</h3>
-          <p>The retrieved abstracts are passed to <strong>OpenAI's GPT-4o</strong> with a structured prompt that asks it to: synthesize the findings across papers, write at a pre-med/AP Biology level, rate the overall evidence strength, note key limitations, and include every PubMed citation by PMID. The AI is explicitly instructed not to add information not present in the abstracts.</p>
+          <p>The retrieved abstracts are passed to <strong>OpenAI's GPT-4o</strong> with a structured prompt that asks it to: synthesize the findings across papers, write at a pre-med/AP Biology level, produce an evidence snapshot, note key limitations, and include every PubMed citation by PMID. The AI is explicitly instructed not to add information not present in the abstracts.</p>
         </div>
       </div>
 
@@ -212,8 +212,8 @@
 
     <!-- EVIDENCE RATINGS -->
     <div class="method-section">
-      <h2>Evidence strength ratings</h2>
-      <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1rem;">Each summary includes a rating that reflects the type and consistency of studies found. These follow standard evidence hierarchy conventions used in clinical medicine:</p>
+      <h2>Evidence Snapshot</h2>
+      <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1rem;">Each summary includes an evidence snapshot that reflects the type and consistency of studies found. These follow standard evidence hierarchy conventions used in clinical medicine:</p>
       <table class="evidence-table">
         <thead>
           <tr>
