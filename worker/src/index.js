@@ -2,10 +2,13 @@
 //   POST /summarize  { topic, level? }          -> Markdown summary
 //   POST /chat       { question, summary }      -> Markdown answer
 //   GET  /health                                -> "ok"
+//   GET/POST /unsubscribe?token=...              -> weekly email unsubscribe page
+//   POST /admin/digest-preview (Bearer token)    -> dry-run of the weekly email, never sends
 // Secrets (set in the Cloudflare dashboard, never in code): OPENAI_API_KEY, IP_SALT. Optional: NCBI_API_KEY.
 
 import { searchPubMed, parseInput, fetchPaper } from './pubmed.js';
 import { buildSummaryMessages, buildChatMessages, buildCardMessages, parseCards, assembleSummary, DEFAULT_LEVEL, LEVELS } from './prompt.js';
+import { runDigest, handleUnsubscribe } from './digest.js';
 export { Limiter } from './limiter.js';
 
 const ALLOWED_ORIGINS = ['https://medsumai.com', 'https://www.medsumai.com', 'https://mitrapatel1909.github.io'];
@@ -223,11 +226,42 @@ async function handleCards(request, env, deps) {
   }
 }
 
+function timingSafeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+
+function digestDeps(env, deps) {
+  return {
+    fetchImpl: deps.fetchImpl,
+    summarize: (topic) => runSummary({ env, deps, topic, paper: null, level: DEFAULT_LEVEL }),
+    once: async (key) => (await hit(env, key, 1, 8 * 86400)).ok,
+  };
+}
+
+// Preview only: forces a dry run, so this route can never send email, and needs the admin token.
+async function handleDigestPreview(request, env, deps) {
+  const auth = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!env.DIGEST_ADMIN_TOKEN || !timingSafeEqual(auth, env.DIGEST_ADMIN_TOKEN)) return json(request, 404, { error: 'Not found.' });
+  try {
+    const r = await runDigest({ ...env, DIGEST_ENABLED: 'true', DIGEST_DRY_RUN: 'true' }, digestDeps(env, deps));
+    return json(request, 200, r, { 'Cache-Control': 'no-store' });
+  } catch (e) {
+    return json(request, 502, { error: 'Preview failed.' });
+  }
+}
+
 export function makeHandler(deps = { fetchImpl: (...a) => fetch(...a) }) {
   return async function handle(request, env) {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request) });
     if (request.method === 'GET' && url.pathname === '/health') return new Response('ok', { headers: corsHeaders(request) });
+
+    // Email links and one-click unsubscribe come from mail clients, not from the site, so they skip the origin check.
+    if (url.pathname === '/unsubscribe' && (request.method === 'GET' || request.method === 'POST')) return handleUnsubscribe(request, env, deps);
+    if (request.method === 'POST' && url.pathname === '/admin/digest-preview') return handleDigestPreview(request, env, deps);
 
     // Only the real site may call the API from a browser. (Other clients can still try, which is what the limits are for.)
     const origin = request.headers.get('Origin');
@@ -244,4 +278,12 @@ export function makeHandler(deps = { fetchImpl: (...a) => fetch(...a) }) {
   };
 }
 
-export default { fetch: makeHandler() };
+const defaultDeps = { fetchImpl: (...a) => fetch(...a) };
+export async function scheduled(event, env, ctx, deps = defaultDeps) {
+  // Does nothing unless DIGEST_ENABLED=true, and only sends when DIGEST_DRY_RUN=false.
+  const result = await runDigest(env, digestDeps(env, deps));
+  console.log('digest', JSON.stringify({ ...result, html: undefined }));
+  return result;
+}
+
+export default { fetch: makeHandler(), scheduled: (event, env, ctx) => ctx.waitUntil(scheduled(event, env, ctx)) };
