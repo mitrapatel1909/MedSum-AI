@@ -8,7 +8,7 @@
 
 ## What it does
 
-- **Search:** Searches PubMed for a topic and summarizes the abstracts it finds, at a reading level you choose (high school, college or pre-med), with a verified citation link for each article
+- **Search:** Searches PubMed for a topic and summarizes the abstracts it finds, at a reading level you choose (high school, college or pre-med), with a validated PubMed citation link for each article
 - **Topics library:** 17 curated topic pages with pre-generated educational summaries — ADHD treatment, Alzheimer disease, antibiotic resistance, cancer immunotherapy, concussion recovery in teens, CRISPR gene therapy for sickle cell disease, early peanut introduction, GLP-1 drugs and obesity, gut microbiome, health effects of sleep deprivation, intermittent fasting, long COVID, migraine prevention (CGRP drugs), mRNA vaccines, statins and LDL cholesterol, type 2 diabetes treatment, and vitamin D and depression
 - **Evidence Snapshot:** A plain-language description of the study types and consistency found in the retrieved abstracts — not a formal systematic review or clinical evidence grade, but a transparent account of what was actually retrieved from PubMed
 - **Flashcards:** Exportable Anki-style flashcards from any summary

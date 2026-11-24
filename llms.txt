@@ -12,7 +12,7 @@ MedSumAI is a free educational tool that helps students understand published med
 4. Includes an evidence snapshot describing the study types and consistency found in the retrieved abstracts
 5. Offers exportable Anki-style flashcards for study
 
-All citations link directly to the original PubMed record. MedSumAI does not invent sources.
+MedSumAI restricts citations to articles retrieved from PubMed and links them to their original records. Citation links are not a guarantee that every cited article supports the associated claim.
 
 ## Audience
 
