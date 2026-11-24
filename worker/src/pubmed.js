@@ -139,6 +139,18 @@ export function parseInput(text) {
   return null;
 }
 
+// Batch-fetch up to 10 papers by PMID. Returns array of articles (skips any with no abstract).
+export async function fetchPapersByPmids(pmids, { fetchImpl = (...a) => fetch(...a), apiKey } = {}) {
+  if (!pmids || !pmids.length) return [];
+  const common = `tool=medsumai&email=${encodeURIComponent('hello@medsumai.com')}${apiKey ? `&api_key=${encodeURIComponent(apiKey)}` : ''}`;
+  const fetchUrl = `${EUTILS}/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=${pmids.join(',')}&${common}`;
+  const res = await getWithRetry(fetchUrl, fetchImpl);
+  const articles = parseArticles(await res.text());
+  // Preserve caller's ordering
+  const byPmid = new Map(articles.map((a) => [a.pmid, a]));
+  return pmids.map((id) => byPmid.get(String(id))).filter(Boolean);
+}
+
 // Returns { article } or { reason: 'not_found' | 'no_abstract' }.
 export async function fetchPaper(input, { fetchImpl = (...a) => fetch(...a), apiKey } = {}) {
   const common = `tool=medsumai&email=${encodeURIComponent('hello@medsumai.com')}${apiKey ? `&api_key=${encodeURIComponent(apiKey)}` : ''}`;

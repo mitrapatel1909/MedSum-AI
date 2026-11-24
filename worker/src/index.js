@@ -6,8 +6,8 @@
 //   POST /admin/digest-preview (Bearer token)    -> dry-run of the weekly email, never sends
 // Secrets (set in the Cloudflare dashboard, never in code): OPENAI_API_KEY, IP_SALT. Optional: NCBI_API_KEY.
 
-import { searchPubMed, parseInput, fetchPaper } from './pubmed.js';
-import { buildSummaryMessages, buildChatMessages, buildCardMessages, parseCards, assembleSummary, DEFAULT_LEVEL, LEVELS } from './prompt.js';
+import { searchPubMed, parseInput, fetchPaper, fetchPapersByPmids } from './pubmed.js';
+import { buildSummaryMessages, buildChatMessages, buildCardMessages, parseCards, assembleSummary, buildCompareMessages, DEFAULT_LEVEL, LEVELS } from './prompt.js';
 import { runDigest, handleUnsubscribe } from './digest.js';
 export { Limiter } from './limiter.js';
 
@@ -21,6 +21,7 @@ function limitsFor(env) {
     summarize: { minute: num(env.SUMMARIZE_PER_MINUTE, 3), hour: num(env.SUMMARIZE_PER_HOUR, 12), day: num(env.SUMMARIZE_PER_DAY_GLOBAL, 800) },
     chat: { minute: num(env.CHAT_PER_MINUTE, 8), hour: num(env.CHAT_PER_HOUR, 40), day: num(env.CHAT_PER_DAY_GLOBAL, 3000) },
     cards: { minute: num(env.CARDS_PER_MINUTE, 3), hour: num(env.CARDS_PER_HOUR, 15), day: num(env.CARDS_PER_DAY_GLOBAL, 600) },
+    compare: { minute: num(env.COMPARE_PER_MINUTE, 2), hour: num(env.COMPARE_PER_HOUR, 8), day: num(env.COMPARE_PER_DAY_GLOBAL, 300) },
   };
 }
 
@@ -187,6 +188,96 @@ async function runSummary({ env, deps, topic, paper, level }, emit = () => {}) {
   }
 }
 
+// ── Compare Research endpoints ────────────────────────────────────────────────
+
+// POST /compare/search  { topic }
+// Returns the first 10 PubMed papers for a topic so the user can select 3-5 to compare.
+async function handleCompareSearch(request, env, deps) {
+  const { body, error } = await readBody(request);
+  if (error) return json(request, 400, { error });
+  const topic = validTopic(body.topic);
+  if (!topic) return json(request, 400, { error: 'Please enter a medical or biology topic (3 to 200 characters).' });
+
+  const lim = await checkLimits(env, 'summarize', await visitorKey(request, env));
+  if (!lim.ok) {
+    const msg = lim.global ? 'MedSumAI has reached its free daily limit. Please come back tomorrow.' : 'Too many requests. Please wait a bit and try again.';
+    return json(request, 429, { error: msg }, { 'Retry-After': String(lim.retryAfter) });
+  }
+
+  let articles;
+  try {
+    articles = await searchPubMed(topic, { fetchImpl: deps.fetchImpl, apiKey: env.NCBI_API_KEY, maxArticles: 10 });
+  } catch {
+    return json(request, 502, { error: 'PubMed is not responding right now. Please try again shortly.' });
+  }
+  if (!articles.length) return json(request, 200, { papers: [], message: `No PubMed abstracts found for "${topic}". Try a different topic.` });
+
+  const papers = articles.map((a) => ({
+    pmid: a.pmid,
+    title: a.title,
+    year: a.year,
+    journal: a.journal,
+    studyType: a.studyType,
+    url: a.url,
+    snippet: a.abstract.slice(0, 180).replace(/\s+\S*$/, '') + '…',
+  }));
+  return json(request, 200, { papers }, { 'Cache-Control': 'no-store' });
+}
+
+// POST /compare  { pmids: ['12345678', ...] }   (3–5 PMIDs)
+// Fetches abstracts, extracts structured data, returns comparison JSON.
+async function handleCompare(request, env, deps) {
+  const { body, error } = await readBody(request);
+  if (error) return json(request, 400, { error });
+
+  const rawPmids = Array.isArray(body.pmids) ? body.pmids : [];
+  const pmids = rawPmids.map((p) => String(p || '').trim()).filter((p) => /^\d{1,9}$/.test(p));
+  if (pmids.length < 2 || pmids.length > 5) return json(request, 400, { error: 'Please select 2 to 5 papers to compare.' });
+
+  const lim = await checkLimits(env, 'compare', await visitorKey(request, env));
+  if (!lim.ok) {
+    const msg = lim.global ? 'MedSumAI has reached its free daily limit. Please come back tomorrow.' : 'Too many requests. Please wait a bit and try again.';
+    return json(request, 429, { error: msg }, { 'Retry-After': String(lim.retryAfter) });
+  }
+
+  let articles;
+  try {
+    articles = await fetchPapersByPmids(pmids, { fetchImpl: deps.fetchImpl, apiKey: env.NCBI_API_KEY });
+  } catch {
+    return json(request, 502, { error: 'PubMed is not responding right now. Please try again shortly.' });
+  }
+  if (articles.length < 2) return json(request, 400, { error: 'Could not retrieve abstracts for enough of the selected papers. Please try different papers.' });
+
+  let rawJson;
+  try {
+    rawJson = await callOpenAI(env, buildCompareMessages(articles), 2400, deps.fetchImpl);
+  } catch {
+    return json(request, 502, { error: 'The comparison engine is temporarily unavailable. Please try again in a few minutes.' });
+  }
+
+  let parsed;
+  try {
+    // Strip markdown code fences the model may add despite instructions
+    const cleaned = rawJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    return json(request, 502, { error: 'Could not parse the comparison. Please try again.' });
+  }
+
+  if (!parsed || !Array.isArray(parsed.papers) || !parsed.synthesis || !Array.isArray(parsed.research_gaps)) {
+    return json(request, 502, { error: 'The comparison returned an unexpected format. Please try again.' });
+  }
+
+  // Enrich each extracted paper with the original PubMed metadata
+  const byPmid = new Map(articles.map((a) => [a.pmid, a]));
+  for (const p of parsed.papers) {
+    const orig = byPmid.get(String(p.pmid));
+    if (orig) Object.assign(p, { title: orig.title, year: orig.year, journal: orig.journal, url: orig.url });
+  }
+
+  return json(request, 200, { comparison: parsed }, { 'Cache-Control': 'no-store' });
+}
+
 async function handleChat(request, env, deps) {
   const { body, error } = await readBody(request);
   if (error) return json(request, 400, { error });
@@ -271,6 +362,8 @@ export function makeHandler(deps = { fetchImpl: (...a) => fetch(...a) }) {
       if (request.method === 'POST' && url.pathname === '/summarize') return await handleSummarize(request, env, deps);
       if (request.method === 'POST' && url.pathname === '/chat') return await handleChat(request, env, deps);
       if (request.method === 'POST' && url.pathname === '/flashcards') return await handleCards(request, env, deps);
+      if (request.method === 'POST' && url.pathname === '/compare/search') return await handleCompareSearch(request, env, deps);
+      if (request.method === 'POST' && url.pathname === '/compare') return await handleCompare(request, env, deps);
     } catch {
       return json(request, 500, { error: 'Something went wrong. Please try again.' });
     }
