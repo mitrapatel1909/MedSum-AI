@@ -1,6 +1,6 @@
 # MedSumAI
 
-**Medical research, explained simply.** Built for pre-med and AP Bio students: paste a PubMed paper or type a topic, and MedSumAI finds the real articles on PubMed and writes a cited plain-language summary at your reading level, with an evidence check and flashcards you can export to Anki. Free to use, no signup needed to search.
+**Medical research, explained simply.** Built for pre-med and AP Bio students: type a topic, and MedSumAI finds the real articles on PubMed and writes a cited plain-language summary at your reading level, with an evidence snapshot and flashcards you can export to Anki. Free to use, no signup needed.
 
 **Live site:** https://medsumai.com
 
@@ -8,11 +8,17 @@
 
 ## What it does
 
-- Searches PubMed for a topic and summarizes the abstracts it finds, at a reading level you choose (high school, college or pre-med), with a verified citation link for each article
+- **Search:** Searches PubMed for a topic and summarizes the abstracts it finds, at a reading level you choose (high school, college or pre-med), with a verified citation link for each article
+- **Topics library:** 17 curated topic pages with pre-generated educational summaries — ADHD treatment, Alzheimer disease, antibiotic resistance, cancer immunotherapy, concussion recovery in teens, CRISPR gene therapy for sickle cell disease, early peanut introduction, GLP-1 drugs and obesity, gut microbiome, health effects of sleep deprivation, intermittent fasting, long COVID, migraine prevention (CGRP drugs), mRNA vaccines, statins and LDL cholesterol, type 2 diabetes treatment, and vitamin D and depression
+- **Evidence Snapshot:** A plain-language description of the study types and consistency found in the retrieved abstracts — not a formal systematic review or clinical evidence grade, but a transparent account of what was actually retrieved from PubMed
+- **Flashcards:** Exportable Anki-style flashcards from any summary
 - Follow-up chat about the summary you just generated
 - Optional free accounts: save summaries to "My Summaries"
-- Free PDF study guides (immune system, cell biology, genetics) with an optional email signup
 - Light and dark mode
+
+## Source and methodology limitations
+
+Summaries use PubMed abstracts only, not full-text articles. The Evidence Snapshot is a plain-language description of retrieved study types — it is not a validated clinical grading system. See [medsumai.com/methodology.html](https://medsumai.com/methodology.html) for the full explanation.
 
 ## How it is built
 

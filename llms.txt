@@ -26,7 +26,7 @@ MedSumAI is for educational use only. Summaries are based on PubMed abstracts, n
 
 ## Topic library
 
-MedSumAI includes curated educational summaries for 16 topics: ADHD treatment, Alzheimer disease treatment, antibiotic resistance, cancer immunotherapy, concussion recovery, CRISPR gene editing, diabetes management, gut microbiome and health, heart disease prevention, long COVID, mRNA vaccines, obesity and weight management, Parkinson disease, sleep and health, stem cell therapy, and stress and mental health.
+MedSumAI includes curated educational summaries for 17 topics: ADHD treatment, Alzheimer disease treatment, antibiotic resistance, cancer immunotherapy, concussion recovery in teens, CRISPR gene therapy for sickle cell disease, early peanut introduction and peanut allergy, GLP-1 drugs and obesity, gut microbiome and health, health effects of sleep deprivation, intermittent fasting, long COVID, migraine prevention (CGRP drugs), mRNA vaccines, statins and LDL cholesterol, type 2 diabetes treatment, and vitamin D and depression.
 
 ## Pricing
 
