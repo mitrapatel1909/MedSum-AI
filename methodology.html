@@ -196,8 +196,8 @@
       <div class="method-step">
         <div class="step-num">3</div>
         <div class="step-body">
-          <h3>AI summarization (GPT-4o)</h3>
-          <p>The retrieved abstracts are passed to <strong>OpenAI's GPT-4o</strong> with a structured prompt that asks it to: synthesize the findings across papers, write at a pre-med/AP Biology level, produce an evidence snapshot, note key limitations, and include every PubMed citation by PMID. The AI is explicitly instructed not to add information not present in the abstracts.</p>
+          <h3>AI summarization (OpenAI language model)</h3>
+          <p>The retrieved abstracts are passed to an <strong>OpenAI language model</strong> with a structured prompt that asks it to: synthesize the findings across papers, write at a pre-med/AP Biology level, produce an evidence snapshot, note key limitations, and include every PubMed citation by PMID. The AI is explicitly instructed not to add information not present in the abstracts.</p>
         </div>
       </div>
 
@@ -213,38 +213,38 @@
     <!-- EVIDENCE RATINGS -->
     <div class="method-section">
       <h2>Evidence Snapshot</h2>
-      <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1rem;">Each summary includes an evidence snapshot that reflects the type and consistency of studies found. These follow standard evidence hierarchy conventions used in clinical medicine:</p>
+      <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1rem;">Each summary includes an evidence snapshot — a plain-language description of the research characteristics found in the retrieved abstracts. This is not a formal clinical evidence-quality assessment or a validated evidence grade.</p>
       <table class="evidence-table">
         <thead>
           <tr>
-            <th>Rating</th>
-            <th>What it means</th>
-            <th>Typical source types</th>
+            <th>What MedSumAI reports</th>
+            <th>What it shows</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><span class="badge badge-strong">Strong</span></td>
-            <td>Multiple high-quality studies with consistent findings</td>
-            <td>Systematic reviews, meta-analyses, large RCTs</td>
+            <td><strong>Study types</strong></td>
+            <td>RCTs, systematic reviews, observational studies, and other designs identified in the retrieved abstracts</td>
           </tr>
           <tr>
-            <td><span class="badge badge-moderate">Moderate</span></td>
-            <td>Reasonably consistent evidence, but some gaps</td>
-            <td>Smaller RCTs, prospective cohort studies</td>
+            <td><strong>Research setting</strong></td>
+            <td>Whether studies involved humans, animals, or cell models, where identifiable from abstracts</td>
           </tr>
           <tr>
-            <td><span class="badge badge-limited">Limited</span></td>
-            <td>Early or sparse evidence; conclusions are preliminary</td>
-            <td>Observational studies, case series, animal models</td>
+            <td><strong>Evidence consistency</strong></td>
+            <td>Whether findings across papers appear consistent, mixed, or limited in number</td>
           </tr>
           <tr>
-            <td><span class="badge badge-mixed">Mixed / Conflicting</span></td>
-            <td>Studies exist but disagree on outcomes or direction</td>
-            <td>Various study types with contradictory results</td>
+            <td><strong>Limitations</strong></td>
+            <td>Gaps and caveats reported by the abstracts themselves</td>
+          </tr>
+          <tr>
+            <td><strong>Source coverage</strong></td>
+            <td>Number of abstracts included in the summary</td>
           </tr>
         </tbody>
       </table>
+      <p style="font-size:0.82rem; color:var(--muted); margin-top:0.75rem;">These characteristics come directly from the retrieved abstracts. They should not be interpreted as clinical guidance or used to make medical decisions.</p>
     </div>
 
     <!-- WHAT IT IS / ISN'T -->
