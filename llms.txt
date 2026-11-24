@@ -1,0 +1,45 @@
+# MedSumAI
+
+> Free biomedical research summarizer for pre-med, AP Biology, and undergraduate students. Retrieves real PubMed abstracts on a topic and returns a cited, plain-English summary at the reader's level — with an evidence snapshot and exportable flashcards.
+
+## What MedSumAI does
+
+MedSumAI is a free educational tool that helps students understand published medical research. Users type a biomedical topic (e.g. "CRISPR gene editing", "checkpoint inhibitors in cancer") and the tool:
+
+1. Retrieves recent PubMed abstracts for that topic via the NCBI E-utilities API
+2. Passes those abstracts to an OpenAI language model with a structured prompt
+3. Returns a plain-English summary with inline citations linking back to PubMed
+4. Includes an evidence snapshot describing the study types and consistency found in the retrieved abstracts
+5. Offers exportable Anki-style flashcards for study
+
+All citations link directly to the original PubMed record. MedSumAI does not invent sources.
+
+## Audience
+
+- Pre-medical students preparing for MCAT, clinical volunteering, or research
+- AP Biology and undergraduate biology students
+- Anyone who wants to read real medical research without a subscription
+
+## Important limitations
+
+MedSumAI is for educational use only. Summaries are based on PubMed abstracts, not full-text articles. The evidence snapshot is a plain-language description of what was retrieved — it is not a formal systematic review, a clinical evidence grade, or medical advice. Users should always consult a qualified healthcare professional for medical decisions.
+
+## Topic library
+
+MedSumAI includes curated educational summaries for 16 topics: ADHD treatment, Alzheimer disease treatment, antibiotic resistance, cancer immunotherapy, concussion recovery, CRISPR gene editing, diabetes management, gut microbiome and health, heart disease prevention, long COVID, mRNA vaccines, obesity and weight management, Parkinson disease, sleep and health, stem cell therapy, and stress and mental health.
+
+## Pricing
+
+Free. No account required.
+
+## Links
+
+- Homepage: https://medsumai.com/
+- Topic library: https://medsumai.com/topics/
+- Methodology: https://medsumai.com/methodology.html
+- Privacy policy: https://medsumai.com/privacy.html
+- PubMed (source database): https://pubmed.ncbi.nlm.nih.gov/
+
+## Contact
+
+Built by Mitra Patel. For questions or feedback, use the feedback button on the site.
