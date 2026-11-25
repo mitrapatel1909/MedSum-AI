@@ -198,7 +198,7 @@ async function handleCompareSearch(request, env, deps) {
   const topic = validTopic(body.topic);
   if (!topic) return json(request, 400, { error: 'Please enter a medical or biology topic (3 to 200 characters).' });
 
-  const lim = await checkLimits(env, 'summarize', await visitorKey(request, env));
+  const lim = await checkLimits(env, 'compare', await visitorKey(request, env));
   if (!lim.ok) {
     const msg = lim.global ? 'MedSumAI has reached its free daily limit. Please come back tomorrow.' : 'Too many requests. Please wait a bit and try again.';
     return json(request, 429, { error: msg }, { 'Retry-After': String(lim.retryAfter) });
@@ -231,7 +231,7 @@ async function handleCompare(request, env, deps) {
   if (error) return json(request, 400, { error });
 
   const rawPmids = Array.isArray(body.pmids) ? body.pmids : [];
-  const pmids = rawPmids.map((p) => String(p || '').trim()).filter((p) => /^\d{1,9}$/.test(p));
+  const pmids = [...new Set(rawPmids.map((p) => String(p || '').trim()).filter((p) => /^\d{1,9}$/.test(p)))];
   if (pmids.length < 2 || pmids.length > 5) return json(request, 400, { error: 'Please select 2 to 5 papers to compare.' });
 
   const lim = await checkLimits(env, 'compare', await visitorKey(request, env));
