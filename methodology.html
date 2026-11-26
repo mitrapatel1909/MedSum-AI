@@ -158,15 +158,19 @@
   </style>
 </head>
 <body>
-  <nav>
-    <a class="nav-logo" href="/">MedSumAI</a>
-    <div class="nav-links">
-      <a href="/topics/">Topics</a>
-      <a href="/index.html#shop">Study Guides</a>
-      <a href="/methodology.html" class="active">How it works</a>
+  <header>
+    <div style="display:flex; align-items:center; gap:0.5rem;">
+      <a href="/" class="logo" style="text-decoration:none; color:inherit;">Med<span>Sum</span>AI</a>
+      <div class="tagline" style="margin-bottom:0;">How It Works</div>
     </div>
-    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle dark mode">🌙</button>
-  </nav>
+    <nav class="topnav" style="display:flex; align-items:center; gap:1.5rem; margin-left:auto;">
+      <a href="/topics/" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Topics</a>
+      <a href="/compare" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Compare</a>
+      <a href="/methodology.html" style="font-size:0.85rem; color:var(--accent); text-decoration:none; font-weight:500; white-space:nowrap;">How it works</a>
+      <a href="/#shop" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Study Guides</a>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+    </nav>
+  </header>
 
   <main class="page-wrap">
     <div class="page-eyebrow">Methodology</div>
