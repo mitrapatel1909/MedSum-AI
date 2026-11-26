@@ -5,180 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>How MedSumAI Works · Methodology</title>
   <meta name="description" content="How MedSumAI searches PubMed, summarizes biomedical research, and describes the characteristics and limitations of retrieved studies." />
-  <link rel="icon" href="/favicon.ico" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <meta name="theme-color" content="#2d6a4f"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <link rel="icon" href="/favicon.ico" sizes="32x32"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/site.css"/>
+  <script src="/site.js"></script>
   <style>
-    :root {
-      --bg: #f9f7f4;
-      --card: #ffffff;
-      --ink: #1a1a1a;
-      --muted: #6b7280;
-      --accent: #2d6a4f;
-      --border: #e5e7eb;
-      --radius: 12px;
-    }
-    [data-theme="dark"] {
-      --bg: #0f1117;
-      --card: #1a1d27;
-      --ink: #e8e8e8;
-      --muted: #9ca3af;
-      --accent: #4ade80;
-      --border: #2d3141;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--ink);
-      font-family: 'DM Sans', sans-serif;
-      line-height: 1.7;
-      min-height: 100vh;
-    }
-    /* ── NAV ── */
-    nav {
-      position: sticky; top: 0; z-index: 50;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      padding: 0 1.5rem;
-      display: flex; align-items: center; gap: 1.5rem;
-      height: 56px;
-    }
-    .nav-logo { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--ink); text-decoration: none; }
-    .nav-links { display: flex; gap: 1.25rem; margin-left: auto; }
-    .nav-links a { font-size: 0.85rem; color: var(--muted); text-decoration: none; transition: color 0.15s; }
-    .nav-links a:hover, .nav-links a.active { color: var(--accent); }
-
-    /* ── PAGE LAYOUT ── */
-    .page-wrap {
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 3rem 1.5rem 5rem;
-    }
-    .page-eyebrow {
-      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--accent); margin-bottom: 0.75rem;
-    }
-    h1 {
-      font-family: 'DM Serif Display', serif;
-      font-size: clamp(1.9rem, 4vw, 2.6rem);
-      line-height: 1.2;
-      color: var(--ink);
-      margin-bottom: 1rem;
-    }
-    .page-lead {
-      font-size: 1.05rem; color: var(--muted); margin-bottom: 2.5rem;
-      max-width: 580px;
-    }
-
-    /* ── SECTIONS ── */
-    .method-section {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--card);
-      padding: 1.75rem 1.75rem;
-      margin-bottom: 1.5rem;
-    }
-    .method-step {
-      display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem;
-    }
+    .method-step { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem; }
     .method-step:last-child { margin-bottom: 0; }
-    .step-num {
-      flex-shrink: 0;
-      width: 2rem; height: 2rem;
-      border-radius: 50%;
-      background: rgba(45,106,79,0.1);
-      color: var(--accent);
-      font-size: 0.8rem; font-weight: 600;
-      display: flex; align-items: center; justify-content: center;
-      margin-top: 0.1rem;
-    }
-    [data-theme="dark"] .step-num { background: rgba(74,222,128,0.1); }
-    .step-body h3 {
-      font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 0.3rem;
-    }
+    .step-num { flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 50%; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-top: 0.1rem; }
+    .step-body h3 { font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 0.3rem; }
     .step-body p { font-size: 0.88rem; color: var(--muted); line-height: 1.65; }
-    .step-body code {
-      font-family: 'DM Mono', monospace; font-size: 0.82rem;
-      background: rgba(45,106,79,0.08); color: var(--accent);
-      padding: 0.1rem 0.4rem; border-radius: 4px;
-    }
+    .step-body code { font-family: var(--font-mono); font-size: 0.82rem; background: color-mix(in srgb, var(--accent) 9%, transparent); color: var(--accent); padding: 0.1rem 0.4rem; border-radius: 4px; }
 
-    h2 {
-      font-family: 'DM Serif Display', serif;
-      font-size: 1.35rem; color: var(--ink);
-      margin-bottom: 1rem;
-    }
+    .card h2 { font-family: var(--font-serif); font-weight: 400; font-size: 1.35rem; color: var(--ink); margin-bottom: 1rem; }
 
-    /* ── EVIDENCE TABLE ── */
     .evidence-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.85rem; }
-    .evidence-table th {
-      text-align: left; padding: 0.5rem 0.75rem;
-      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--muted); border-bottom: 1px solid var(--border);
-    }
-    .evidence-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--ink); vertical-align: top; }
+    .evidence-table th { text-align: left; padding: 0.5rem 0.75rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .evidence-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--ink); vertical-align: top; line-height: 1.55; }
     .evidence-table tr:last-child td { border-bottom: none; }
-    .badge {
-      display: inline-block; padding: 0.15rem 0.55rem; border-radius: 20px;
-      font-size: 0.72rem; font-weight: 600; white-space: nowrap;
-    }
-    .badge-strong { background: rgba(45,106,79,0.12); color: var(--accent); }
-    .badge-moderate { background: rgba(234,179,8,0.12); color: #854d0e; }
-    .badge-limited { background: rgba(107,114,128,0.12); color: var(--muted); }
-    .badge-mixed { background: rgba(239,68,68,0.1); color: #991b1b; }
-    [data-theme="dark"] .badge-moderate { color: #fbbf24; }
-    [data-theme="dark"] .badge-mixed { color: #f87171; }
 
-    /* ── DISCLAIMER BOX ── */
-    .disclaimer-box {
-      border: 1px solid var(--border); border-radius: var(--radius); background: var(--card);
-      padding: 1.25rem 1.5rem; margin-top: 1.5rem;
-      display: flex; gap: 0.75rem; align-items: flex-start;
-    }
+    .disclaimer-box { display: flex; gap: 0.75rem; align-items: flex-start; margin-top: 1.5rem; }
     .disclaimer-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 0.1rem; }
-    .disclaimer-box p { font-size: 0.85rem; color: var(--muted); line-height: 1.65; }
+    .disclaimer-box p { font-size: 0.85rem; line-height: 1.65; }
     .disclaimer-box strong { color: var(--ink); }
-
-    /* ── FOOTER ── */
-    footer {
-      text-align: center; padding: 2rem 1rem;
-      font-size: 0.8rem; color: var(--muted);
-      border-top: 1px solid var(--border);
-    }
-    footer a { color: var(--accent); text-decoration: none; }
-
-    /* ── DARK TOGGLE ── */
-    .theme-btn {
-      background: none; border: 1px solid var(--border); border-radius: 8px;
-      padding: 0.3rem 0.6rem; cursor: pointer; font-size: 0.85rem;
-      color: var(--muted); font-family: 'DM Sans', sans-serif;
-      margin-left: auto;
-    }
   </style>
 </head>
 <body>
-  <header>
-    <div style="display:flex; align-items:center; gap:0.5rem;">
-      <a href="/" class="logo" style="text-decoration:none; color:inherit;">Med<span>Sum</span>AI</a>
-      <div class="tagline" style="margin-bottom:0;">How It Works</div>
-    </div>
-    <nav class="topnav" style="display:flex; align-items:center; gap:1.5rem; margin-left:auto;">
-      <a href="/topics/" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Topics</a>
-      <a href="/compare" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Compare</a>
-      <a href="/methodology.html" style="font-size:0.85rem; color:var(--accent); text-decoration:none; font-weight:500; white-space:nowrap;">How it works</a>
-      <a href="/#shop" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Study Guides</a>
-      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
-    </nav>
-  </header>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header class="site-header">
+  <a class="brand" href="/" aria-label="MedSumAI home">
+    <span class="logo">Med<span>Sum</span>AI</span>
+    <span class="tagline">Biomedical Research Summarizer</span>
+  </a>
+  <nav class="topnav" aria-label="Main">
+    <a href="/topics/">Topics</a>
+    <a class="nav-cta" href="/compare">Compare</a>
+    <a href="/methodology.html" aria-current="page">How it works</a>
+    <a href="/#shop">Study Guides</a>
+    <button class="theme-toggle" id="themeToggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+  </nav>
+</header>
 
-  <main class="page-wrap">
-    <div class="page-eyebrow">Methodology</div>
-    <h1>How MedSumAI works</h1>
-    <p class="page-lead">Every summary starts with real research. Here's what happens between your query and the plain-English explanation you get back.</p>
+  <main class="page-wrap" id="main">
+    <div class="page-header">
+      <span class="page-label">Methodology</span>
+      <h1>How MedSumAI works</h1>
+      <p>Every summary starts with real research. Here's what happens between your query and the plain-English explanation you get back.</p>
+    </div>
 
     <!-- STEP BY STEP -->
-    <div class="method-section">
+    <div class="card">
       <h2>The pipeline, step by step</h2>
 
       <div class="method-step">
@@ -215,7 +95,7 @@
     </div>
 
     <!-- EVIDENCE RATINGS -->
-    <div class="method-section">
+    <div class="card">
       <h2>Evidence Snapshot</h2>
       <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1rem;">Each summary includes an evidence snapshot — a plain-language description of the research characteristics found in the retrieved abstracts. This is not a formal clinical evidence-quality assessment or a validated evidence grade.</p>
       <table class="evidence-table">
@@ -252,7 +132,7 @@
     </div>
 
     <!-- WHAT IT IS / ISN'T -->
-    <div class="method-section">
+    <div class="card">
       <h2>What MedSumAI is — and isn't</h2>
       <div class="method-step">
         <div class="step-num">✓</div>
@@ -278,32 +158,21 @@
     </div>
 
     <!-- DISCLAIMER -->
-    <div class="disclaimer-box">
+    <div class="notice notice-warn disclaimer-box">
       <div class="disclaimer-icon">⚠️</div>
       <p><strong>Educational use only.</strong> Nothing on MedSumAI is medical advice. If you have questions about your own health, please consult a qualified healthcare professional. AI-generated summaries can contain errors — always check the linked PubMed sources before drawing conclusions.</p>
     </div>
   </main>
 
-  <footer>
-    <p><a href="/">Home</a> &nbsp;·&nbsp; <a href="/topics/">Topics</a> &nbsp;·&nbsp; <a href="/privacy.html">Privacy</a> &nbsp;·&nbsp; <a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank">GitHub</a></p>
-    <p style="margin-top:0.5rem">Powered by PubMed &amp; OpenAI · For education only · Not medical advice</p>
-  </footer>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="/">Home</a><a href="/topics/">Topics</a><a href="/compare">Compare</a><a href="/methodology.html">How it works</a><a href="/privacy.html">Privacy</a><a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <p>Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed</a> &amp; OpenAI. For education only. Not medical advice.</p>
+</footer>
 
   <!-- Cloudflare Web Analytics -->
   <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "835baa76f907492a9ff87f734a9e47fe"}'></script>
 
-  <script>
-    // Dark mode
-    const saved = localStorage.getItem('msai_theme');
-    if (saved) document.documentElement.setAttribute('data-theme', saved);
-    function toggleTheme() {
-      const cur = document.documentElement.getAttribute('data-theme');
-      const next = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('msai_theme', next);
-      document.getElementById('themeBtn').textContent = next === 'dark' ? '☀️' : '🌙';
-    }
-    if (saved === 'dark') document.getElementById('themeBtn').textContent = '☀️';
-  </script>
 </body>
 </html>
