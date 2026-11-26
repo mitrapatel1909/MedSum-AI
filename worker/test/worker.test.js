@@ -369,3 +369,109 @@ test('summarize stream: upstream failure is an error event; limits and bad input
   assert.equal(limited.status, 429);
   assert.match(limited.headers.get('content-type'), /json/);
 });
+
+// ─── Compare feature tests ────────────────────────────────────────────────────
+
+const COMPARE_JSON = {
+  papers: [
+    { pmid: '11111111', population: 'Adults', intervention: 'Vitamin D', comparator: 'Placebo', outcome: 'Immune response', design: 'Meta-analysis', key_finding: 'Risk fell 12%' },
+    { pmid: '22222222', population: 'Adults', intervention: 'Vitamin D', comparator: 'None', outcome: 'Immune response', design: 'Observational', key_finding: 'Positive correlation' },
+  ],
+  synthesis: 'Both papers support vitamin D benefits.',
+  research_gaps: ['Long-term RCTs needed', 'Paediatric populations understudied'],
+};
+
+test('compare/search: happy path returns 10 papers from PubMed', async () => {
+  const f = makeFetch();
+  const res = await makeHandler({ fetchImpl: f })(post('/compare/search', { topic: 'vitamin D immunity' }), env());
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), ORIGIN);
+  const { papers } = await res.json();
+  assert.ok(Array.isArray(papers));
+  assert.ok(papers.length > 0);
+  assert.ok(papers.every((p) => p.pmid && p.title));
+  // confirm cache is disabled
+  assert.equal(res.headers.get('Cache-Control'), 'no-store');
+});
+
+test('compare/search: missing or bad topic returns 400 without hitting PubMed', async () => {
+  const f = makeFetch();
+  const h = makeHandler({ fetchImpl: f });
+  const r1 = await h(post('/compare/search', { topic: 'ab' }), env());
+  assert.equal(r1.status, 400);
+  const r2 = await h(post('/compare/search', {}), env());
+  assert.equal(r2.status, 400);
+  assert.equal(f.calls.filter((c) => c.url.includes('ncbi')).length, 0);
+});
+
+test('compare: happy path with 2 valid PMIDs returns structured comparison', async () => {
+  const f = makeFetch({ openaiText: JSON.stringify(COMPARE_JSON) });
+  const res = await makeHandler({ fetchImpl: f })(post('/compare', { pmids: ['11111111', '22222222'] }), env());
+  assert.equal(res.status, 200);
+  const { comparison } = await res.json();
+  assert.ok(Array.isArray(comparison.papers));
+  assert.equal(comparison.papers.length, 2);
+  assert.equal(typeof comparison.synthesis, 'string');
+  assert.ok(Array.isArray(comparison.research_gaps));
+  // titles / years should be enriched from PubMed metadata
+  const p = comparison.papers.find((x) => x.pmid === '11111111');
+  assert.ok(p && p.title, 'paper should have title from PubMed');
+});
+
+test('compare: duplicate PMIDs are de-duplicated; 1 unique PMID returns 400', async () => {
+  const f = makeFetch();
+  const res = await makeHandler({ fetchImpl: f })(post('/compare', { pmids: ['11111111', '11111111', '11111111'] }), env());
+  assert.equal(res.status, 400);
+  const { error } = await res.json();
+  assert.match(error, /2 to 5/);
+});
+
+test('compare: invalid PMIDs (non-numeric) are stripped; too few valid → 400', async () => {
+  const f = makeFetch();
+  const h = makeHandler({ fetchImpl: f });
+  // all invalid
+  const r1 = await h(post('/compare', { pmids: ['abc', 'xyz', '!!!'] }), env());
+  assert.equal(r1.status, 400);
+  // one valid, one invalid → still only 1 valid → 400
+  const r2 = await h(post('/compare', { pmids: ['11111111', 'notapmid'] }), env());
+  assert.equal(r2.status, 400);
+});
+
+test('compare: abstracts missing for fetched papers → 400 with descriptive message', async () => {
+  // XML with no <Abstract> blocks → parseArticles returns 0 usable articles
+  const noAbstractXml = `<?xml version="1.0"?><PubmedArticleSet>
+    <PubmedArticle><MedlineCitation><PMID Version="1">11111111</PMID>
+    <Article><Journal><Title>J</Title></Journal><ArticleTitle>T</ArticleTitle></Article>
+    </MedlineCitation></PubmedArticle>
+    <PubmedArticle><MedlineCitation><PMID Version="1">22222222</PMID>
+    <Article><Journal><Title>J</Title></Journal><ArticleTitle>T2</ArticleTitle></Article>
+    </MedlineCitation></PubmedArticle>
+  </PubmedArticleSet>`;
+  const f = makeFetch({ xml: noAbstractXml });
+  const res = await makeHandler({ fetchImpl: f })(post('/compare', { pmids: ['11111111', '22222222'] }), env());
+  assert.equal(res.status, 400);
+  const { error } = await res.json();
+  assert.match(error, /abstract/i);
+});
+
+test('compare: malformed JSON from OpenAI returns 502', async () => {
+  const f = makeFetch({ openaiText: 'not json at all' });
+  const res = await makeHandler({ fetchImpl: f })(post('/compare', { pmids: ['11111111', '22222222'] }), env());
+  assert.equal(res.status, 502);
+  const { error } = await res.json();
+  assert.match(error, /parse/i);
+  // must not leak raw model output or API key
+  assert.doesNotMatch(error, /sk-test|not json/i);
+});
+
+test('compare: rate limit is enforced per visitor', async () => {
+  // COMPARE_PER_MINUTE=1 → second request in same window is 429
+  const e = env({ COMPARE_PER_MINUTE: '1' });
+  const h = makeHandler({ fetchImpl: makeFetch({ openaiText: JSON.stringify(COMPARE_JSON) }) });
+  const first = await h(post('/compare/search', { topic: 'vitamin D' }), e);
+  assert.equal(first.status, 200);
+  const second = await h(post('/compare/search', { topic: 'vitamin D' }), e);
+  assert.equal(second.status, 429);
+  assert.match(second.headers.get('content-type'), /json/);
+  assert.ok(second.headers.get('Retry-After'));
+});
