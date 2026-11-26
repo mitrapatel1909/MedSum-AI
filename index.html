@@ -105,33 +105,47 @@
     }
 
     header {
-      padding: 2.5rem 3rem 1.5rem;
+      padding: 0.9rem 2rem;
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       gap: 1rem;
       border-bottom: 1px solid var(--border);
-      position: relative;
-      z-index: 1;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: color-mix(in srgb, var(--bg) 93%, transparent);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
     }
+    .brand { display: flex; align-items: baseline; gap: 0.6rem; text-decoration: none; color: inherit; min-width: 0; }
+    .topnav { display: flex; align-items: center; gap: 1.4rem; margin-left: auto; }
+    .topnav a { font-size: 0.85rem; color: var(--muted); text-decoration: none; font-weight: 400; white-space: nowrap; transition: color 0.15s; }
+    .topnav a:hover { color: var(--accent); }
+    .topnav a.nav-cta { color: var(--accent); font-weight: 500; border: 1px solid var(--accent); border-radius: 999px; padding: 0.3rem 0.95rem; }
+    .topnav a.nav-cta:hover { background: var(--accent); color: var(--card); }
  
     .logo { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--ink); letter-spacing: -0.02em; }
     .logo span { color: var(--accent); }
-    .tagline { font-size: 0.8rem; color: var(--muted); font-weight: 300; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.25rem; }
+    .tagline { font-size: 0.72rem; color: var(--muted); font-weight: 300; letter-spacing: 0.08em; text-transform: uppercase; }
  
-    main { flex: 1; max-width: 820px; margin: 0 auto; padding: 4rem 2rem; width: 100%; position: relative; z-index: 5; }
+    main { flex: 1; max-width: 820px; margin: 0 auto; padding: 3rem 2rem 4rem; width: 100%; position: relative; z-index: 5; }
  
-    .hero { text-align: center; margin-bottom: 3.5rem; }
-    .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 1rem; color: var(--ink); }
+    .hero { text-align: center; margin-bottom: 2.25rem; }
+    .eyebrow { display: inline-block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); padding: 0.3rem 0.9rem; border-radius: 999px; margin-bottom: 1.1rem; }
+    .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2.1rem, 5.5vw, 3.3rem); line-height: 1.12; letter-spacing: -0.03em; margin-bottom: 1rem; color: var(--ink); }
     .hero h1 em { font-style: italic; color: var(--accent); }
-    .hero p { font-size: 1rem; color: var(--muted); line-height: 1.7; max-width: 480px; margin: 0 auto; }
+    .hero p { font-size: 1.02rem; color: var(--muted); line-height: 1.7; max-width: 540px; margin: 0 auto; }
  
-    .stats-bar { display: flex; justify-content: center; gap: 2rem; margin-bottom: 2.5rem; flex-wrap: wrap; }
+    .stats-bar { display: flex; justify-content: center; gap: 2rem; margin: 1.5rem 0 0; flex-wrap: wrap; }
     .stat-item { text-align: center; }
     .stat-number { font-family: 'DM Mono', monospace; font-size: 1.4rem; font-weight: 500; color: var(--accent); }
     .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
  
     .search-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 2rem; }
-    .search-label { display: block; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
+    .search-heading { font-family: 'DM Serif Display', serif; font-size: 1.4rem; font-weight: 400; letter-spacing: -0.01em; margin-bottom: 0.2rem; }
+    .search-label { display: block; font-size: 0.88rem; color: var(--muted); margin-bottom: 0.85rem; }
+    #understand { scroll-margin-top: 5rem; }
+    #resultBox { scroll-margin-top: 6rem; } /* extra room: the box is still 12px low (fade-in) when the scroll target is measured */
     .input-row { display: flex; gap: 0.75rem; }
     .level-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.9rem; flex-wrap: wrap; }
     .level-row label { font-size: 0.78rem; color: var(--muted); }
@@ -155,11 +169,6 @@
     .more-topics-btn { font-size: 0.8rem; padding: 0.3rem 0.8rem; border: 1px dashed var(--border); border-radius: 20px; color: var(--muted); cursor: pointer; background: transparent; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
     .more-topics-btn:hover { border-color: var(--accent); color: var(--accent); background: #f0faf4; }
  
-    .examples-wrapper { position: relative; }
- 
-    .topics-dropdown { display: none; position: absolute; top: calc(100% + 0.5rem); left: 0; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.75rem; box-shadow: 0 8px 32px rgba(0,0,0,0.12); z-index: 10; width: 320px; max-height: 360px; overflow-y: auto; flex-wrap: wrap; gap: 0.4rem; }
-    .topics-dropdown.open { display: flex; }
-    .topics-dropdown-label { width: 100%; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.25rem; padding: 0 0.2rem; }
  
     .loading { display: none; text-align: center; padding: 3rem 0; }
     .loading.visible { display: block; }
@@ -345,64 +354,6 @@
  
     /* ── FRAMER ANIMATIONS ──────────────────────────────────────── */
  
-    /* Hero orbit */
-    .hero-orbit {
-      position: relative;
-      width: 280px;
-      height: 280px;
-      margin: 0 auto 2rem;
-      animation: heroFadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    }
- 
-    @keyframes heroFadeIn {
-      from { opacity: 0; transform: scale(0.94); }
-      to { opacity: 1; transform: scale(1); }
-    }
- 
-    .hero-orbit svg {
-      position: absolute;
-      inset: -30px;
-      width: calc(100% + 60px);
-      height: calc(100% + 60px);
-      animation: orbitRotate 40s linear infinite;
-    }
- 
-    @keyframes orbitRotate {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
- 
-    .hero-orbit svg text {
-      font-family: 'DM Mono', monospace;
-      font-size: 9.5px;
-      fill: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 0.4em;
-      opacity: 0.6;
-    }
- 
-    .hero-core {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 2rem;
-    }
- 
-    .hero-core h1 {
-      font-family: 'DM Serif Display', serif;
-      font-size: 1.8rem;
-      line-height: 1.2;
-      letter-spacing: -0.03em;
-      color: var(--ink);
-    }
- 
-    .hero-core h1 em { font-style: italic; color: var(--accent); }
- 
     @keyframes spin { to { transform: rotate(360deg); } }
  
     /* Marquee */
@@ -517,8 +468,11 @@
     .shop-card.in:hover { transform: translateY(-4px); }
  
     @media (max-width: 640px) {
-      header { padding: 1.5rem; flex-direction: column; align-items: flex-start; gap: 0.75rem; }
-      main { padding: 2rem 1rem; }
+      header { padding: 0.9rem 1rem; flex-direction: column; align-items: flex-start; gap: 0.6rem; position: static; }
+      .topnav { margin-left: 0; flex-wrap: wrap; gap: 0.5rem 1rem; }
+      .tagline { display: none; }
+      main { padding: 1.75rem 1rem 3rem; }
+      .search-box { padding: 1.25rem; }
       .input-row { flex-direction: column; }
       .subscribe-bar { flex-direction: column; text-align: center; }
       .subscribe-input-row { flex-direction: column; width: 100%; }
@@ -540,7 +494,7 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
     }
-    @media (max-width: 480px) { .topnav { gap: 0.8rem !important; } }
+    @media (max-width: 480px) { .topnav { gap: 0.5rem 0.8rem; } }
 
     /* ── Demo preview ── */
     .demo-preview { max-width: 760px; margin: 0 auto 2.5rem; padding: 0 1.25rem; }
@@ -574,23 +528,106 @@
     .shop-card-objectives { margin: 0.25rem 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.2rem; }
     .shop-card-objectives li { font-size: 0.78rem; color: var(--muted); display: flex; align-items: flex-start; gap: 0.4rem; }
     .shop-card-objectives li::before { content: "✓"; color: var(--accent); font-size: 0.72rem; margin-top: 0.1rem; flex-shrink: 0; }
+
+    /* ── Task cards, topic browser, skeleton ── */
+    .task-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
+    .task-card { display: flex; flex-direction: column; gap: 0.45rem; padding: 1.15rem 1.2rem 1.05rem; background: var(--card); border: 1px solid var(--border); border-radius: 14px; text-decoration: none; color: var(--ink); transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s; }
+    .task-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
+    .task-card.primary { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
+    .task-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); margin-bottom: 0.15rem; }
+    .task-title { font-family: 'DM Serif Display', serif; font-size: 1.15rem; line-height: 1.25; }
+    .task-desc { font-size: 0.83rem; color: var(--muted); line-height: 1.55; flex: 1; }
+    .task-go { font-size: 0.8rem; font-weight: 500; color: var(--accent); margin-top: 0.2rem; }
+    @media (max-width: 760px) { .task-grid { grid-template-columns: 1fr; gap: 0.7rem; } .task-card { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 0.8rem; } .task-icon { margin: 0; } .task-title { flex: 1; min-width: 0; } .task-desc { flex-basis: 100%; } .task-go { display: none; } }
+
+    .topic-browser { display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border); }
+    .topic-browser.open { display: block; }
+    .cat-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.85rem; }
+    .pill.cat-tab.active { background: var(--accent); color: var(--card); border-color: var(--accent); }
+    .pill.cat-tab.active:hover { background: var(--accent); color: var(--card); }
+    .topic-group { display: none; flex-wrap: wrap; gap: 0.4rem; }
+    .topic-group.active { display: flex; }
+
+    .skeleton-card { text-align: left; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin: 2rem 0 0; }
+    .sk { border-radius: 6px; background: linear-gradient(90deg, var(--border) 25%, color-mix(in srgb, var(--border) 45%, var(--card)) 50%, var(--border) 75%); background-size: 200% 100%; animation: skShimmer 1.4s linear infinite; }
+    .sk-title { height: 14px; width: 34%; margin-bottom: 1.1rem; }
+    .sk-line { height: 10px; margin-bottom: 0.6rem; }
+    .sk-line.short { width: 60%; }
+    .sk-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.25rem; }
+    .sk-box { height: 74px; border-radius: 12px; }
+    @keyframes skShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+    .error-box .err-hint { display: block; margin-top: 0.5rem; font-size: 0.82rem; color: var(--muted); }
+    .error-box .err-hint a { color: var(--accent); }
+
+    /* ── Results dashboard ── */
+    .result-header-left { align-items: flex-start; min-width: 0; }
+    .result-heading { min-width: 0; }
+    .result-dot { margin-top: 0.35rem; flex-shrink: 0; }
+    .result-topic { font-size: 1.3rem; line-height: 1.25; margin-top: 0.15rem; overflow-wrap: anywhere; }
+    .result-content { padding: 1.5rem 2rem 1.75rem; line-height: 1.7; }
+    .result-content .rs-meta { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 1.4rem; }
+    .result-content .rs-chip { font-size: 0.74rem; font-weight: 500; padding: 0.25rem 0.7rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); background: var(--bg); white-space: nowrap; }
+    .result-content .rs-chip.src { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+    .result-content .rs-notice { padding: 0.85rem 1rem; border-radius: 10px; background: color-mix(in srgb, #d97706 10%, transparent); border: 1px solid color-mix(in srgb, #d97706 30%, var(--border)); font-size: 0.88rem; line-height: 1.6; margin-bottom: 1.25rem; }
+    .result-content .rs-card { margin-bottom: 1.4rem; }
+    .result-content .rs-title { display: flex; align-items: center; gap: 0.55rem; font-family: 'DM Sans', sans-serif; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.7rem; }
+    .result-content .rs-title::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .result-content .rs-body p { margin-bottom: 0.7rem; font-size: 0.92rem; line-height: 1.7; }
+    .result-content .rs-body p:last-child { margin-bottom: 0; }
+    .result-content .rs-body ul, .result-content .rs-body ol { padding-left: 1.15rem; margin-bottom: 0; font-size: 0.9rem; line-height: 1.65; }
+    .result-content .rs-body li { margin-bottom: 0.45rem; }
+    .result-content .rs-plain .rs-body { font-family: 'DM Serif Display', serif; padding: 1.1rem 1.25rem; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); border-radius: 0 12px 12px 0; }
+    .result-content .rs-plain .rs-body p { font-size: 1.15rem; line-height: 1.6; }
+    .result-content .rs-findings .rs-body ul, .result-content .rs-findings .rs-body ol { list-style: none; padding: 0; counter-reset: finding; display: flex; flex-direction: column; gap: 0.6rem; }
+    .result-content .rs-findings .rs-body li { counter-increment: finding; position: relative; margin: 0; padding: 0.8rem 1rem 0.8rem 3.1rem; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; font-size: 0.93rem; line-height: 1.65; }
+    .result-content .rs-findings .rs-body li::before { content: counter(finding); position: absolute; left: 0.85rem; top: 0.8rem; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--accent); color: var(--card); font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+    .result-content .rs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.4rem; }
+    .result-content .rs-grid .rs-card { margin: 0; padding: 1.1rem 1.15rem; border: 1px solid var(--border); border-radius: 14px; background: var(--card); }
+    .result-content .rs-grid .rs-card:only-child { grid-column: 1 / -1; }
+    .result-content .rs-limits { border-color: color-mix(in srgb, #d97706 35%, var(--border)) !important; background: color-mix(in srgb, #d97706 6%, var(--card)) !important; }
+    .result-content .rs-limits .rs-title::before { background: #d97706; }
+    .result-content .rs-evidence-note { margin-top: 0.8rem; padding-top: 0.7rem; border-top: 1px dashed var(--border); font-size: 0.8rem; line-height: 1.55; color: var(--muted); }
+    .result-content .rs-sources-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+    .result-content .src-card { display: flex; gap: 0.9rem; align-items: flex-start; padding: 0.85rem 1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+    .result-content .src-num { flex-shrink: 0; width: 1.6rem; height: 1.6rem; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); color: var(--muted); font: 500 0.75rem 'DM Mono', monospace; display: flex; align-items: center; justify-content: center; margin-top: 0.1rem; }
+    .result-content .src-main { min-width: 0; flex: 1; }
+    .result-content .src-title { font-weight: 500; font-size: 0.92rem; line-height: 1.45; color: var(--ink); overflow-wrap: anywhere; margin-bottom: 0.4rem; }
+    .result-content .src-meta { display: flex; flex-wrap: wrap; gap: 0.35rem 0.7rem; align-items: center; font-size: 0.78rem; color: var(--muted); }
+    .result-content .src-type { font-weight: 600; font-size: 0.66rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid var(--border); }
+    .result-content .src-type.pooled { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+    .result-content .src-type.trial { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+    .result-content a.src-link { font-weight: 500; color: var(--accent); border-bottom: none; margin-left: auto; }
+    .result-content a.src-link:hover { text-decoration: underline; }
+    .result-content .rs-empty { text-align: center; padding: 1.5rem 0.5rem 0.5rem; }
+    .result-content .rs-empty-icon { font-size: 2rem; opacity: 0.55; margin-bottom: 0.5rem; }
+    .result-content .rs-empty h3 { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 1.3rem; margin: 0 0 0.5rem; }
+    .result-content .rs-empty p { color: var(--muted); font-size: 0.92rem; margin: 0 auto 1rem; max-width: 460px; }
+    .result-content .rs-empty ul { display: inline-block; text-align: left; color: var(--muted); font-size: 0.88rem; margin-bottom: 1rem; }
+    @media (max-width: 640px) {
+      .result-header { padding: 1rem 1.25rem; flex-wrap: wrap; }
+      .result-content { padding: 1.25rem; }
+      .result-content .rs-grid { grid-template-columns: 1fr; }
+      .result-content .src-card { flex-wrap: wrap; }
+      .result-content a.src-link { margin-left: 0; }
+    }
 </style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "835baa76f907492a9ff87f734a9e47fe"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>
 
-<header>
-  <div style="display:flex; align-items:center; gap:0.5rem;">
-    <div class="logo">Med<span>Sum</span>AI</div>
-    <div class="tagline" style="margin-bottom:0;">Biomedical Research Summarizer</div>
-  </div>
-  <nav class="topnav" style="display:flex; align-items:center; gap:1.5rem; margin-left:auto;">
-    <a href="/topics/" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Topics</a>
-    <a href="/compare" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Compare</a>
-    <a href="/methodology.html" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">How it works</a>
-    <a href="#shop" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Study Guides</a>
-    <a href="#" id="myLibraryLink" onclick="openLibrary(); return false;" style="display:none; font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">My Summaries</a>
+<header class="site-header">
+  <a class="brand" href="/" aria-label="MedSumAI home">
+    <span class="logo">Med<span>Sum</span>AI</span>
+    <span class="tagline">Biomedical Research Summarizer</span>
+  </a>
+  <nav class="topnav" aria-label="Main">
+    <a href="/topics/">Topics</a>
+    <a class="nav-cta" href="/compare">Compare</a>
+    <a href="/methodology.html">How it works</a>
+    <a href="#shop">Study Guides</a>
+    <a href="#" id="myLibraryLink" onclick="openLibrary(); return false;" style="display:none">My Summaries</a>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
     <div class="user-menu" id="userMenu">
       <button class="user-btn" onclick="showModal('login')">Log in</button>
@@ -600,40 +637,162 @@
 </header>
  
 <main id="main">
-  <div class="hero">
-    <div class="hero-orbit">
-      <svg viewBox="0 0 340 340" aria-hidden="true">
-        <defs>
-          <path id="orbitPath" d="M 170,20 A 150,150 0 1,1 169.99,20" fill="none"/>
-        </defs>
-        <text>
-          <textPath href="#orbitPath">
-            PUBMED ✦ AI SUMMARIES ✦ CITED SOURCES ✦ 35M+ ARTICLES ✦ FREE TO USE ✦ GPT POWERED ✦ FREE GUIDES ✦
-          </textPath>
-        </text>
-      </svg>
-      <div class="hero-core">
-        <h1>Medical research,<br><em>explained simply.</em></h1>
+  <section class="hero" aria-labelledby="heroTitle">
+    <div class="eyebrow">Biomedical research for students</div>
+    <h1 id="heroTitle">Understand the science <em>behind the headlines.</em></h1>
+    <p>Explore real PubMed studies, get plain-English explanations at your reading level, and see how the evidence fits together.</p>
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-number">Free</div>
+        <div class="stat-label">No signup to search</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">35M+</div>
+        <div class="stat-label">PubMed Articles</div>
+      </div>
+      <div class="stat-item" id="statSearchesItem" style="display:none">
+        <div class="stat-number" id="statSearches">—</div>
+        <div class="stat-label">Summaries Generated</div>
       </div>
     </div>
-    <p>Built for pre-med and AP Bio students. Type a topic or paste a PubMed link — get a cited, plain-English summary calibrated to your level, an honest evidence snapshot, and flashcards you can export to Anki. No signup needed.</p>
+  </section>
+
+  <div class="task-grid" role="group" aria-label="What would you like to do?">
+    <a class="task-card primary" href="#understand" onclick="focusSearch(event)">
+      <span class="task-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg></span>
+      <span class="task-title">Understand a research paper</span>
+      <span class="task-desc">Paste a PubMed link, PMID or DOI, or enter a topic.</span>
+      <span class="task-go">Start here ↓</span>
+    </a>
+    <a class="task-card" href="/compare">
+      <span class="task-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/><path d="M6.5 9h0M17.5 9h0M6.5 13h0M17.5 13h0"/></svg></span>
+      <span class="task-title">Compare multiple studies</span>
+      <span class="task-desc">Compare 2–5 papers and see where they agree and differ.</span>
+      <span class="task-go">Open Compare →</span>
+    </a>
+    <a class="task-card" href="/topics/">
+      <span class="task-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+      <span class="task-title">Explore research topics</span>
+      <span class="task-desc">Browse curated, pre-written summaries of high-interest topics.</span>
+      <span class="task-go">Browse topics →</span>
+    </a>
   </div>
- 
-  <div class="stats-bar">
-    <div class="stat-item">
-      <div class="stat-number">Free</div>
-      <div class="stat-label">No signup to search</div>
+
+  <section class="search-box" id="understand" aria-labelledby="searchHeading">
+    <h2 class="search-heading" id="searchHeading">Understand a research paper</h2>
+    <label class="search-label" for="topicInput">Paste a PubMed link, PMID or DOI, or enter a topic.</label>
+    <div class="input-row">
+      <input type="text" id="topicInput" placeholder="A topic (CRISPR cancer therapy) or paste a PubMed link, PMID or DOI" />
+      <button id="searchBtn" onclick="search()">Summarize →</button>
     </div>
-    <div class="stat-item">
-      <div class="stat-number">35M+</div>
-      <div class="stat-label">PubMed Articles</div>
+    <div class="level-row">
+      <label for="levelSelect">Explain it for</label>
+      <select id="levelSelect">
+        <option value="high_school">High school (AP Bio)</option>
+        <option value="undergrad" selected>College undergrad</option>
+        <option value="premed">Pre-med / med student</option>
+      </select>
     </div>
-    <div class="stat-item" id="statSearchesItem" style="display:none">
-      <div class="stat-number" id="statSearches">—</div>
-      <div class="stat-label">Summaries Generated</div>
+    <div class="examples">
+      <span>Popular:</span>
+      <button type="button" class="pill" onclick="setTopic('Alzheimer disease')">Alzheimer's</button>
+      <button type="button" class="pill" onclick="setTopic('cancer immunotherapy')">Cancer immunotherapy</button>
+      <button type="button" class="pill" onclick="setTopic('CRISPR gene therapy')">CRISPR gene therapy</button>
+      <button type="button" class="pill" onclick="setTopic('mRNA vaccines')">mRNA vaccines</button>
+      <button type="button" class="pill" onclick="setTopic('antibiotic resistance')">Antibiotic resistance</button>
+      <button type="button" class="pill" onclick="setTopic('obesity GLP-1 drugs')">GLP-1 drugs</button>
+      <button type="button" class="more-topics-btn" id="browseTopicsBtn" aria-expanded="false" aria-controls="topicsDropdown" onclick="toggleTopicsDropdown()">Browse by category ▾</button>
     </div>
-  </div>
- 
+    <div class="topic-browser" id="topicsDropdown">
+      <div class="cat-tabs" role="group" aria-label="Topic categories">
+        <button type="button" class="pill cat-tab active" aria-pressed="true" aria-controls="topicGroup0" onclick="showTopicGroup(this)">Neurology</button>
+        <button type="button" class="pill cat-tab" aria-pressed="false" aria-controls="topicGroup1" onclick="showTopicGroup(this)">Cardiology</button>
+        <button type="button" class="pill cat-tab" aria-pressed="false" aria-controls="topicGroup2" onclick="showTopicGroup(this)">Oncology</button>
+        <button type="button" class="pill cat-tab" aria-pressed="false" aria-controls="topicGroup3" onclick="showTopicGroup(this)">Infectious Disease</button>
+        <button type="button" class="pill cat-tab" aria-pressed="false" aria-controls="topicGroup4" onclick="showTopicGroup(this)">Mental Health</button>
+        <button type="button" class="pill cat-tab" aria-pressed="false" aria-controls="topicGroup5" onclick="showTopicGroup(this)">Aging &amp; Longevity</button>
+        <button type="button" class="pill cat-tab" aria-pressed="false" aria-controls="topicGroup6" onclick="showTopicGroup(this)">Endocrinology</button>
+        <button type="button" class="pill cat-tab" aria-pressed="false" aria-controls="topicGroup7" onclick="showTopicGroup(this)">Women's &amp; Reproductive Health</button>
+        <button type="button" class="pill cat-tab" aria-pressed="false" aria-controls="topicGroup8" onclick="showTopicGroup(this)">Pediatrics</button>
+        <button type="button" class="pill cat-tab" aria-pressed="false" aria-controls="topicGroup9" onclick="showTopicGroup(this)">Nutrition &amp; Lifestyle</button>
+        <button type="button" class="pill cat-tab" aria-pressed="false" aria-controls="topicGroup10" onclick="showTopicGroup(this)">Immunology &amp; Autoimmune</button>
+      </div>
+      <div class="topic-group active" id="topicGroup0" role="group" aria-label="Neurology topics">
+            <button type="button" class="pill" onclick="setTopicFromDropdown('Parkinson disease')">Parkinson's</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('multiple sclerosis')">Multiple sclerosis</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('epilepsy treatment')">Epilepsy</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('migraine prevention')">Migraine</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('stroke recovery')">Stroke recovery</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('ALS treatment')">ALS</button>
+          </div>
+      <div class="topic-group" id="topicGroup1" role="group" aria-label="Cardiology topics">
+            <button type="button" class="pill" onclick="setTopicFromDropdown('atrial fibrillation')">Atrial fibrillation</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('hypertension treatment')">Hypertension</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('heart failure')">Heart failure</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('cholesterol statins')">Cholesterol</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('coronary artery disease')">Coronary artery disease</button>
+          </div>
+      <div class="topic-group" id="topicGroup2" role="group" aria-label="Oncology topics">
+            <button type="button" class="pill" onclick="setTopicFromDropdown('lung cancer immunotherapy')">Lung cancer</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('breast cancer treatment')">Breast cancer</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('CRISPR gene therapy')">CRISPR</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('colorectal cancer screening')">Colorectal cancer</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('prostate cancer treatment')">Prostate cancer</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('CAR T-cell therapy')">CAR T-cell therapy</button>
+          </div>
+      <div class="topic-group" id="topicGroup3" role="group" aria-label="Infectious Disease topics">
+            <button type="button" class="pill" onclick="setTopicFromDropdown('COVID-19 long COVID')">Long COVID</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('antibiotic resistance')">Antibiotic resistance</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('HIV treatment')">HIV</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('tuberculosis treatment')">Tuberculosis</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('influenza vaccine')">Influenza vaccine</button>
+          </div>
+      <div class="topic-group" id="topicGroup4" role="group" aria-label="Mental Health topics">
+            <button type="button" class="pill" onclick="setTopicFromDropdown('depression treatment')">Depression</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('anxiety disorder')">Anxiety</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('ADHD medication')">ADHD</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('ketamine therapy')">Ketamine therapy</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('PTSD treatment')">PTSD</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('bipolar disorder')">Bipolar disorder</button>
+          </div>
+      <div class="topic-group" id="topicGroup5" role="group" aria-label="Aging and Longevity topics">
+            <button type="button" class="pill" onclick="setTopicFromDropdown('aging longevity senescence')">Longevity</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('dementia prevention')">Dementia</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('osteoporosis treatment')">Osteoporosis</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('sarcopenia muscle aging')">Sarcopenia</button>
+          </div>
+      <div class="topic-group" id="topicGroup6" role="group" aria-label="Endocrinology topics">
+            <button type="button" class="pill" onclick="setTopicFromDropdown('type 1 diabetes')">Type 1 diabetes</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('thyroid disorders')">Thyroid disorders</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('obesity GLP-1 drugs')">GLP-1 drugs</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('PCOS treatment')">PCOS</button>
+          </div>
+      <div class="topic-group" id="topicGroup7" role="group" aria-label="Women's and Reproductive Health topics">
+            <button type="button" class="pill" onclick="setTopicFromDropdown('pregnancy complications')">Pregnancy complications</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('endometriosis treatment')">Endometriosis</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('menopause hormone therapy')">Menopause</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('fertility IVF')">Fertility & IVF</button>
+          </div>
+      <div class="topic-group" id="topicGroup8" role="group" aria-label="Pediatrics topics">
+            <button type="button" class="pill" onclick="setTopicFromDropdown('childhood asthma')">Childhood asthma</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('autism spectrum disorder')">Autism</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('pediatric vaccines')">Pediatric vaccines</button>
+          </div>
+      <div class="topic-group" id="topicGroup9" role="group" aria-label="Nutrition and Lifestyle topics">
+            <button type="button" class="pill" onclick="setTopicFromDropdown('gut microbiome health')">Gut microbiome</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('intermittent fasting')">Intermittent fasting</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('sleep deprivation health effects')">Sleep & health</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('exercise cardiovascular health')">Exercise & heart health</button>
+          </div>
+      <div class="topic-group" id="topicGroup10" role="group" aria-label="Immunology and Autoimmune topics">
+            <button type="button" class="pill" onclick="setTopicFromDropdown('rheumatoid arthritis treatment')">Rheumatoid arthritis</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('lupus treatment')">Lupus</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('psoriasis biologics')">Psoriasis</button>
+            <button type="button" class="pill" onclick="setTopicFromDropdown('allergy immunotherapy')">Allergy immunotherapy</button>
+          </div>
+    </div>
+  </section>
+
   <!-- Demo preview: shows a real sample summary so first-time visitors know what to expect -->
   <div class="demo-preview" id="demoPreview">
     <div class="demo-label">↓ Here's what you get</div>
@@ -653,98 +812,6 @@
       </div>
     </div>
   </div>
-
-  <div class="search-box">
-    <label class="search-label" for="topicInput">Research topic or paper</label>
-    <div class="input-row">
-      <input type="text" id="topicInput" placeholder="A topic (CRISPR cancer therapy) or paste a PubMed link, PMID or DOI" />
-      <button id="searchBtn" onclick="search()">Summarize →</button>
-    </div>
-    <div class="level-row">
-      <label for="levelSelect">Explain it for</label>
-      <select id="levelSelect">
-        <option value="high_school">High school (AP Bio)</option>
-        <option value="undergrad" selected>College undergrad</option>
-        <option value="premed">Pre-med / med student</option>
-      </select>
-    </div>
-    <div class="examples">
-      <span>Try:</span>
-      <button class="pill" onclick="setTopic('vitamin D and depression')">Vitamin D &amp; depression</button>
-      <button class="pill" onclick="setTopic('immunity')">Immunity</button>
-      <button class="pill" onclick="setTopic('diabetes type 2')">Diabetes</button>
-      <button class="pill" onclick="setTopic('Alzheimer disease')">Alzheimer's</button>
-      <button class="pill" onclick="setTopic('cancer immunotherapy')">Cancer immunotherapy</button>
-      <button class="pill" onclick="setTopic('heart disease prevention')">Heart disease</button>
-      <div class="examples-wrapper">
-        <button class="more-topics-btn" onclick="toggleTopicsDropdown()">+ More topics ▾</button>
-        <div class="topics-dropdown" id="topicsDropdown">
-          <div class="topics-dropdown-label">Neurology</div>
-          <button class="pill" onclick="setTopicFromDropdown('Parkinson disease')">Parkinson's</button>
-          <button class="pill" onclick="setTopicFromDropdown('multiple sclerosis')">Multiple sclerosis</button>
-          <button class="pill" onclick="setTopicFromDropdown('epilepsy treatment')">Epilepsy</button>
-          <button class="pill" onclick="setTopicFromDropdown('migraine prevention')">Migraine</button>
-          <button class="pill" onclick="setTopicFromDropdown('stroke recovery')">Stroke recovery</button>
-          <button class="pill" onclick="setTopicFromDropdown('ALS treatment')">ALS</button>
-          <div class="topics-dropdown-label" style="margin-top:0.5rem">Cardiology</div>
-          <button class="pill" onclick="setTopicFromDropdown('atrial fibrillation')">Atrial fibrillation</button>
-          <button class="pill" onclick="setTopicFromDropdown('hypertension treatment')">Hypertension</button>
-          <button class="pill" onclick="setTopicFromDropdown('heart failure')">Heart failure</button>
-          <button class="pill" onclick="setTopicFromDropdown('cholesterol statins')">Cholesterol</button>
-          <button class="pill" onclick="setTopicFromDropdown('coronary artery disease')">Coronary artery disease</button>
-          <div class="topics-dropdown-label" style="margin-top:0.5rem">Oncology</div>
-          <button class="pill" onclick="setTopicFromDropdown('lung cancer immunotherapy')">Lung cancer</button>
-          <button class="pill" onclick="setTopicFromDropdown('breast cancer treatment')">Breast cancer</button>
-          <button class="pill" onclick="setTopicFromDropdown('CRISPR gene therapy')">CRISPR</button>
-          <button class="pill" onclick="setTopicFromDropdown('colorectal cancer screening')">Colorectal cancer</button>
-          <button class="pill" onclick="setTopicFromDropdown('prostate cancer treatment')">Prostate cancer</button>
-          <button class="pill" onclick="setTopicFromDropdown('CAR T-cell therapy')">CAR T-cell therapy</button>
-          <div class="topics-dropdown-label" style="margin-top:0.5rem">Infectious Disease</div>
-          <button class="pill" onclick="setTopicFromDropdown('COVID-19 long COVID')">Long COVID</button>
-          <button class="pill" onclick="setTopicFromDropdown('antibiotic resistance')">Antibiotic resistance</button>
-          <button class="pill" onclick="setTopicFromDropdown('HIV treatment')">HIV</button>
-          <button class="pill" onclick="setTopicFromDropdown('tuberculosis treatment')">Tuberculosis</button>
-          <button class="pill" onclick="setTopicFromDropdown('influenza vaccine')">Influenza vaccine</button>
-          <div class="topics-dropdown-label" style="margin-top:0.5rem">Mental Health</div>
-          <button class="pill" onclick="setTopicFromDropdown('depression treatment')">Depression</button>
-          <button class="pill" onclick="setTopicFromDropdown('anxiety disorder')">Anxiety</button>
-          <button class="pill" onclick="setTopicFromDropdown('ADHD medication')">ADHD</button>
-          <button class="pill" onclick="setTopicFromDropdown('ketamine therapy')">Ketamine therapy</button>
-          <button class="pill" onclick="setTopicFromDropdown('PTSD treatment')">PTSD</button>
-          <button class="pill" onclick="setTopicFromDropdown('bipolar disorder')">Bipolar disorder</button>
-          <div class="topics-dropdown-label" style="margin-top:0.5rem">Aging & Longevity</div>
-          <button class="pill" onclick="setTopicFromDropdown('aging longevity senescence')">Longevity</button>
-          <button class="pill" onclick="setTopicFromDropdown('dementia prevention')">Dementia</button>
-          <button class="pill" onclick="setTopicFromDropdown('osteoporosis treatment')">Osteoporosis</button>
-          <button class="pill" onclick="setTopicFromDropdown('sarcopenia muscle aging')">Sarcopenia</button>
-          <div class="topics-dropdown-label" style="margin-top:0.5rem">Endocrinology</div>
-          <button class="pill" onclick="setTopicFromDropdown('type 1 diabetes')">Type 1 diabetes</button>
-          <button class="pill" onclick="setTopicFromDropdown('thyroid disorders')">Thyroid disorders</button>
-          <button class="pill" onclick="setTopicFromDropdown('obesity GLP-1 drugs')">GLP-1 drugs</button>
-          <button class="pill" onclick="setTopicFromDropdown('PCOS treatment')">PCOS</button>
-          <div class="topics-dropdown-label" style="margin-top:0.5rem">Women's & Reproductive Health</div>
-          <button class="pill" onclick="setTopicFromDropdown('pregnancy complications')">Pregnancy complications</button>
-          <button class="pill" onclick="setTopicFromDropdown('endometriosis treatment')">Endometriosis</button>
-          <button class="pill" onclick="setTopicFromDropdown('menopause hormone therapy')">Menopause</button>
-          <button class="pill" onclick="setTopicFromDropdown('fertility IVF')">Fertility & IVF</button>
-          <div class="topics-dropdown-label" style="margin-top:0.5rem">Pediatrics</div>
-          <button class="pill" onclick="setTopicFromDropdown('childhood asthma')">Childhood asthma</button>
-          <button class="pill" onclick="setTopicFromDropdown('autism spectrum disorder')">Autism</button>
-          <button class="pill" onclick="setTopicFromDropdown('pediatric vaccines')">Pediatric vaccines</button>
-          <div class="topics-dropdown-label" style="margin-top:0.5rem">Nutrition & Lifestyle</div>
-          <button class="pill" onclick="setTopicFromDropdown('gut microbiome health')">Gut microbiome</button>
-          <button class="pill" onclick="setTopicFromDropdown('intermittent fasting')">Intermittent fasting</button>
-          <button class="pill" onclick="setTopicFromDropdown('sleep deprivation health effects')">Sleep & health</button>
-          <button class="pill" onclick="setTopicFromDropdown('exercise cardiovascular health')">Exercise & heart health</button>
-          <div class="topics-dropdown-label" style="margin-top:0.5rem">Immunology & Autoimmune</div>
-          <button class="pill" onclick="setTopicFromDropdown('rheumatoid arthritis treatment')">Rheumatoid arthritis</button>
-          <button class="pill" onclick="setTopicFromDropdown('lupus treatment')">Lupus</button>
-          <button class="pill" onclick="setTopicFromDropdown('psoriasis biologics')">Psoriasis</button>
-          <button class="pill" onclick="setTopicFromDropdown('allergy immunotherapy')">Allergy immunotherapy</button>
-        </div>
-      </div>
-    </div>
-  </div>
  
   <div class="loading" id="loading" role="status" aria-live="polite">
     <div class="dna-loader"><span></span><span></span><span></span><span></span><span></span></div>
@@ -755,6 +822,11 @@
       <div class="loading-step" id="step3">⟳ Generating AI summary</div>
       <div class="loading-step" id="step4">⟳ Formatting results</div>
     </div>
+    <div class="skeleton-card" aria-hidden="true">
+      <div class="sk sk-title"></div>
+      <div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line short"></div>
+      <div class="sk-row"><div class="sk sk-box"></div><div class="sk sk-box"></div></div>
+    </div>
   </div>
  
   <div class="error-box" id="errorBox" role="alert"></div>
@@ -763,8 +835,10 @@
     <div class="result-header">
       <div class="result-header-left">
         <div class="result-dot"></div>
-        <div class="result-label">Summary</div>
-        <div class="result-topic" id="resultTopic"></div>
+        <div class="result-heading">
+          <div class="result-label">Research overview · PubMed sourced</div>
+          <div class="result-topic" id="resultTopic"></div>
+        </div>
       </div>
       <div style="display:flex;gap:0.5rem;align-items:center;">
         <button class="copy-btn" onclick="copyResult()">Copy</button>
@@ -1606,9 +1680,27 @@
   loadStats();
  
   // ── DROPDOWN ──────────────────────────────────────────────────
-  function toggleTopicsDropdown() { document.getElementById('topicsDropdown').classList.toggle('open'); }
-  function setTopicFromDropdown(topic) { document.getElementById('topicsDropdown').classList.remove('open'); setTopic(topic); }
-  document.addEventListener('click', (e) => { if (!e.target.closest('.examples-wrapper')) document.getElementById('topicsDropdown')?.classList.remove('open'); });
+  function toggleTopicsDropdown() {
+    const open = document.getElementById('topicsDropdown').classList.toggle('open');
+    const btn = document.getElementById('browseTopicsBtn');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? 'Hide categories ▴' : 'Browse by category ▾';
+  }
+  function setTopicFromDropdown(topic) {
+    if (document.getElementById('topicsDropdown').classList.contains('open')) toggleTopicsDropdown();
+    setTopic(topic);
+  }
+  function showTopicGroup(tab) {
+    document.querySelectorAll('.cat-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-pressed', 'false'); });
+    document.querySelectorAll('.topic-group').forEach(g => g.classList.remove('active'));
+    tab.classList.add('active'); tab.setAttribute('aria-pressed', 'true');
+    document.getElementById(tab.getAttribute('aria-controls')).classList.add('active');
+  }
+  function focusSearch(e) {
+    if (e) e.preventDefault();
+    document.getElementById('understand').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('topicInput').focus({ preventScroll: true });
+  }
  
   // ── MAIN SEARCH ───────────────────────────────────────────────
   const API_BASE = 'https://api.medsumai.com';
@@ -1691,6 +1783,164 @@
     return 'Could not connect. Check your internet connection and try again.';
   }
 
+  // ── RESULT DASHBOARD ──────────────────────────────────────────
+  // The Worker always writes the same five Markdown sections. Split them and lay them out as cards.
+  // Anything unexpected falls back to the plain Markdown render, so no content is ever dropped.
+  const RS_SECTIONS = { 'in plain english': 'plain', 'key findings': 'findings', 'how strong is the evidence?': 'evidence', 'limitations and caveats': 'limits', 'sources': 'sources' };
+  const RS_TITLES = { plain: 'The big picture', findings: 'Key findings', evidence: 'How strong is the evidence?', limits: 'Limitations and uncertainties', sources: 'Evidence and sources' };
+
+  function rsEl(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function rsBody(md) {
+    const d = rsEl('div', 'rs-body');
+    d.innerHTML = safeRender(String(md).trim());
+    d.querySelectorAll('a[href]').forEach(a => { a.target = '_blank'; a.rel = 'noopener noreferrer'; });
+    return d;
+  }
+  function rsCard(key, content) {
+    const c = rsEl('section', 'rs-card rs-' + key);
+    const h = rsEl('h3', 'rs-title', RS_TITLES[key]);
+    c.appendChild(h); c.appendChild(content);
+    return c;
+  }
+  function splitSummary(md) {
+    const sections = {}, pre = [];
+    let key = null, seenHeading = false, known = 0, unknown = 0;
+    String(md).split(/\r?\n/).forEach(line => {
+      const m = line.match(/^##\s+(.+?)\s*#*\s*$/);
+      if (m) {
+        seenHeading = true;
+        key = RS_SECTIONS[m[1].trim().toLowerCase()] || null;
+        if (key) { if (!sections[key]) { sections[key] = []; known++; } } else unknown++;
+        return;
+      }
+      if (key) sections[key].push(line); else if (!seenHeading) pre.push(line);
+    });
+    return { sections, pre: pre.join('\n').trim(), known, unknown };
+  }
+  function parseSources(md) {
+    const papers = [], notes = [];
+    String(md).split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(line => {
+      const num = line.match(/^(\d+)\.\s+(.*)$/);
+      if (!num) { notes.push(line); return; }
+      const m = num[2].match(/^(.+?)\s+\*([^*]+)\*\s+·\s+(.+?)\s+·\s+\[PubMed\]\((https:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/[^)\s]+)\)\s*$/);
+      papers.push(m ? { n: +num[1], title: m[1], venue: m[2], type: m[3], url: m[4] }
+                    : { n: +num[1], title: num[2].replace(/\[([^\]]*)\]\([^)]*\)/g, '$1'), venue: '', type: '', url: '' });
+    });
+    // The line the Worker writes about study mix; drop the "Based on N abstracts..." half the chips already show.
+    const note = notes.join(' ').replace(/\*\*?/g, '').replace(/^Based on[^.]*\.\s*Abstracts only, not full papers\.\s*/i, '').trim();
+    return { papers, note };
+  }
+  function rsPlural(type, n) {
+    const t = type.toLowerCase();
+    if (n < 2) return t;
+    if (/y$/.test(t)) return t.slice(0, -1) + 'ies';
+    if (/is$/.test(t)) return t.slice(0, -2) + 'es';
+    return t + 's';
+  }
+  function rsTypeClass(type) {
+    const t = type.toLowerCase();
+    if (t === 'meta-analysis' || t === 'systematic review') return 'pooled';
+    if (t === 'randomized controlled trial' || t === 'clinical trial') return 'trial';
+    return '';
+  }
+  function buildSourceCard(p) {
+    const li = rsEl('li', 'src-card');
+    li.appendChild(rsEl('span', 'src-num', String(p.n)));
+    const main = rsEl('div', 'src-main');
+    main.appendChild(rsEl('div', 'src-title', p.title));
+    const meta = rsEl('div', 'src-meta');
+    if (p.type) meta.appendChild(rsEl('span', 'src-type ' + rsTypeClass(p.type), p.type));
+    if (p.venue) meta.appendChild(rsEl('span', '', p.venue));
+    if (p.url) {
+      const a = rsEl('a', 'src-link', 'View original PubMed article ↗');
+      a.href = p.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.setAttribute('aria-label', 'View original PubMed article: ' + p.title);
+      meta.appendChild(a);
+    }
+    main.appendChild(meta); li.appendChild(main);
+    return li;
+  }
+  function buildEmptyState(kind, message) {
+    const box = rsEl('div', 'rs-empty');
+    box.appendChild(rsEl('div', 'rs-empty-icon', '🔍'));
+    box.appendChild(rsEl('h3', '', kind.toLowerCase() === 'paper not found' ? "We couldn't find that paper" : "We couldn't find studies for that"));
+    const isPaper = kind.toLowerCase() === 'paper not found';
+    // Keep the Worker's own first sentence (it names what was searched); the tips below replace the rest.
+    const first = String(message).trim().split(/(?<=\.)\s+/)[0];
+    const p = rsEl('p'); p.innerHTML = safeRender(first).replace(/^<p>|<\/p>\s*$/g, ''); box.appendChild(p);
+    const tips = rsEl('ul');
+    (isPaper
+      ? ['Check the PMID, DOI or link for typos', 'Search the paper\'s topic instead of pasting the paper']
+      : ['Check the spelling or try a more specific medical term', 'Try a broader topic (for example "migraine" instead of a drug name)', 'Paste a PubMed link or PMID to summarize one specific paper']
+    ).forEach(t => tips.appendChild(rsEl('li', '', t)));
+    box.appendChild(tips);
+    const link = rsEl('a', 'src-link', 'Or browse curated topics →'); link.href = '/topics/'; link.style.marginLeft = '0';
+    box.appendChild(rsEl('div')).appendChild(link);
+    return box;
+  }
+  // Returns 'dashboard', 'flat' or 'empty' so the caller can decide which extras (chat, flashcards) to show.
+  function renderResult(md) {
+    const host = document.getElementById('resultContent');
+    host.textContent = '';
+    const emptyM = String(md).match(/^\s*##\s+(No studies found|Paper not found)\s*\n([\s\S]*)$/i);
+    if (emptyM) { host.appendChild(buildEmptyState(emptyM[1], emptyM[2])); return 'empty'; }
+    const parsed = splitSummary(md);
+    if (!parsed.known || parsed.unknown) { host.innerHTML = safeRender(md); return 'flat'; }
+    const S = parsed.sections;
+    const text = k => (S[k] || []).join('\n').trim();
+    const src = S.sources ? parseSources(S.sources.join('\n')) : { papers: [], note: '' };
+
+    if (src.papers.length) {
+      const meta = rsEl('div', 'rs-meta');
+      meta.appendChild(rsEl('span', 'rs-chip src', src.papers.length + ' PubMed abstract' + (src.papers.length === 1 ? '' : 's')));
+      const counts = {};
+      src.papers.forEach(p => { if (p.type) counts[p.type] = (counts[p.type] || 0) + 1; });
+      Object.entries(counts).sort((a, b) => b[1] - a[1]).forEach(([t, n]) => meta.appendChild(rsEl('span', 'rs-chip', n + ' ' + rsPlural(t, n))));
+      meta.appendChild(rsEl('span', 'rs-chip', 'Abstracts only, not full papers'));
+      host.appendChild(meta);
+    }
+    if (parsed.pre) { const n = rsEl('div', 'rs-notice'); n.innerHTML = safeRender(parsed.pre).replace(/^<p>|<\/p>\s*$/g, ''); host.appendChild(n); }
+    if (text('plain')) host.appendChild(rsCard('plain', rsBody(text('plain'))));
+    if (text('findings')) host.appendChild(rsCard('findings', rsBody(text('findings'))));
+
+    const grid = rsEl('div', 'rs-grid');
+    if (text('evidence') || src.note) {
+      const body = text('evidence') ? rsBody(text('evidence')) : rsEl('div', 'rs-body');
+      if (src.note) body.appendChild(rsEl('div', 'rs-evidence-note', src.note + ' This is worked out from PubMed\'s own study-type labels, not by the AI.'));
+      grid.appendChild(rsCard('evidence', body));
+    }
+    if (text('limits')) grid.appendChild(rsCard('limits', rsBody(text('limits'))));
+    if (grid.children.length) host.appendChild(grid);
+
+    if (src.papers.length) {
+      const list = rsEl('ol', 'rs-sources-list');
+      src.papers.forEach(p => list.appendChild(buildSourceCard(p)));
+      host.appendChild(rsCard('sources', list));
+    } else if (text('sources')) {
+      host.appendChild(rsCard('sources', rsBody(text('sources'))));
+    }
+    return 'dashboard';
+  }
+
+  // Say what went wrong and what to do next, not just that something did.
+  function showSearchError(err) {
+    const eb = document.getElementById('errorBox');
+    const msg = friendlyRequestError(err);
+    const limited = /Server error: 429/.test(String((err && err.message) || '')) || /too many|daily limit/i.test(msg);
+    eb.textContent = '⚠ ' + msg;
+    const hint = rsEl('span', 'err-hint');
+    hint.appendChild(document.createTextNode((limited ? 'Waiting a minute usually clears this. ' : 'Check your connection and try again. ') + 'Curated topic summaries load instantly and never use the summarizer: '));
+    const a = rsEl('a', '', 'browse topics'); a.href = '/topics/';
+    hint.appendChild(a); hint.appendChild(document.createTextNode('.'));
+    eb.appendChild(hint);
+    eb.classList.add('visible');
+  }
+
   async function search() {
     const topic = document.getElementById('topicInput').value.trim();
     if (!topic) { document.getElementById('topicInput').focus(); return; }
@@ -1712,7 +1962,7 @@
       document.getElementById('resultTopic').textContent = topic;
       // Strip leading = then convert markdown to HTML and sanitize before inserting
       const cleaned = html.trim().replace(/^=+/, '').trim();
-      document.getElementById('resultContent').innerHTML = safeRender(cleaned);
+      const kind = renderResult(cleaned);
       document.getElementById('resultBox').classList.add('visible');
       document.getElementById('chatBox').classList.add('visible');
       resetCards();
@@ -1723,13 +1973,16 @@
       if (demo) demo.style.display = 'none';
       const hbar = document.getElementById('helpfulBar');
       if (hbar) { hbar.style.display = 'flex'; resetHelpful(); }
+      if (kind === 'empty') {
+        // Nothing to ask follow-ups about, turn into flashcards or rate.
+        ['chatBox', 'cardsBox'].forEach(id => document.getElementById(id).classList.remove('visible'));
+        if (hbar) hbar.style.display = 'none';
+      }
       document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
       document.getElementById('resultBox').focus({ preventScroll: true });
     } catch (err) {
       hideLoading();
-      const eb = document.getElementById('errorBox');
-      eb.textContent = '⚠ ' + friendlyRequestError(err);
-      eb.classList.add('visible');
+      showSearchError(err);
     }
   }
  

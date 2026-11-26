@@ -54,6 +54,18 @@ def route(r):
         if state['webhook_mode'] == 'streamerr':
             lines = [{'event': 'stage', 'stage': 'search'}, {'event': 'error', 'error': 'PubMed is not responding right now. Please try again shortly.'}]
             return r.fulfill(status=200, headers={**CORS, 'content-type': 'application/x-ndjson'}, body='\n'.join(json.dumps(l) for l in lines) + '\n')
+        if state['webhook_mode'] == 'dashboard':
+            md = ('## In plain English\n\nA short overview. [PMID 11111111](https://pubmed.ncbi.nlm.nih.gov/11111111/)\n\n'
+                  '## Key findings\n\n- First finding.\n- Second finding.\n\n'
+                  '## How strong is the evidence?\n\nMixed.\n\n'
+                  '## Limitations and caveats\n\n- Short trials.\n\n'
+                  '## Sources\nBased on 3 PubMed abstracts: 1 meta-analysis, 1 randomized controlled trial, 1 review. Abstracts only, not full papers. Includes pooled evidence (a meta-analysis or systematic review).\n\n'
+                  '1. Title one *Journal A, 2023* · Meta-analysis · [PubMed](https://pubmed.ncbi.nlm.nih.gov/11111111/)\n'
+                  '2. Title <img src=x onerror=alert(1)> two *Journal B, 2021* · Randomized controlled trial · [PubMed](https://pubmed.ncbi.nlm.nih.gov/22222222/)\n'
+                  '3. Hostile link *Journal C, 2020* · Review · [PubMed](javascript:alert(1))')
+            return r.fulfill(status=200, headers={**CORS, 'content-type': 'text/plain'}, body=md)
+        if state['webhook_mode'] == 'empty':
+            return r.fulfill(status=200, headers={**CORS, 'content-type': 'text/plain'}, body='## No studies found\nI could not find PubMed abstracts for **zzz**. Try a more specific medical term.')
         if state['webhook_mode'] == 'long':
             return r.fulfill(status=200, headers={**CORS, 'content-type': 'text/plain'}, body='## In plain English\n\n' + 'Vitamin D may modestly reduce depressive symptoms. ' * 8)
         return r.fulfill(status=200, headers={**CORS, 'content-type': 'text/plain'}, body='## Summary\n\nTest summary text.')
@@ -318,6 +330,39 @@ with sync_playwright() as p:
     check('16 before any event only step 1 is active', seen['first'] == ['active', 'idle', 'idle'], str(seen['first']))
     check('16 after the abstracts event steps 1-2 are done, step 3 active, count shown', seen['mid'] == ['done', 'done', 'active'] and 'Found 3 abstracts' in seen['midText'], str(seen))
     check('16 chunks split mid-line are reassembled', seen['md'] == '## ok', str(seen['md']))
+    state['webhook_mode'] = 'ok'
+    # 17. homepage hierarchy: three tasks, Compare in the nav, topics grouped by category
+    h = ctx.new_page()
+    h.goto(f'http://127.0.0.1:{PORT}/index.html')
+    check('17 three task cards (understand, compare, explore)', h.locator('.task-card').count() == 3 and h.locator('.task-card[href="/compare"]').count() == 1 and h.locator('.task-card[href="/topics/"]').count() == 1)
+    check('17 Compare is a prominent nav item', h.locator('nav.topnav a.nav-cta[href="/compare"]').count() == 1)
+    check('17 only a handful of featured topics are shown up front', h.locator('.examples > .pill').count() == 6)
+    check('17 category browser starts closed', not h.is_visible('#topicsDropdown'))
+    h.click('#browseTopicsBtn')
+    check('17 category browser opens and reports aria-expanded', h.is_visible('#topicsDropdown') and h.get_attribute('#browseTopicsBtn', 'aria-expanded') == 'true')
+    check('17 only one category of topics is visible at a time', h.locator('.topic-group:visible').count() == 1)
+    h.locator('.cat-tab').nth(2).click()
+    check('17 switching category swaps the topics shown', h.locator('.cat-tab').nth(2).get_attribute('aria-pressed') == 'true' and h.locator('.topic-group:visible').count() == 1 and h.locator('.topic-group:visible').get_attribute('id') == 'topicGroup2')
+    h.locator('.topic-group:visible .pill').first.click()
+    check('17 picking a category topic fills the box and closes the browser', h.input_value('#topicInput') != '' and not h.is_visible('#topicsDropdown'))
+    # 18. results dashboard
+    state['webhook_mode'] = 'dashboard'
+    h.fill('#topicInput', 'dash'); h.click('#searchBtn'); h.wait_for_selector('#resultBox.visible')
+    check('18 sections become cards (big picture, findings, evidence, limits, sources)', h.locator('#resultContent .rs-card').count() == 5, str(h.locator('#resultContent .rs-card').count()))
+    check('18 study mix chips come from the sources', 'meta-analysis' in h.inner_text('#resultContent .rs-meta') and 'randomized controlled trial' in h.inner_text('#resultContent .rs-meta'))
+    first = h.locator('.src-card').first.text_content()
+    check('18 one evidence card per source with journal and study design', h.locator('.src-card').count() == 3 and 'Journal A, 2023' in first and 'Meta-analysis' in first, first)
+    check('18 PubMed links open in a new tab without opener access', h.locator('#resultContent a.src-link[href^="https://pubmed.ncbi.nlm.nih.gov/"]').count() == 2 and h.evaluate("[...document.querySelectorAll('#resultContent a[href]')].every(a => a.target === '_blank' && /noopener/.test(a.rel))"))
+    check('18 source titles are plain text and unsafe links are never rendered as links', h.locator('#resultContent img').count() == 0 and h.locator('#resultContent a[href^="javascript"]').count() == 0 and h.locator('.src-card').nth(2).locator('a').count() == 0)
+    check('18 the Copy button still copies the visible text', 'key findings' in h.evaluate("document.getElementById('resultContent').innerText").lower())
+    # 19. empty state and error hints
+    state['webhook_mode'] = 'empty'
+    h.fill('#topicInput', 'zzz'); h.click('#searchBtn'); h.wait_for_function("document.querySelector('#resultContent .rs-empty')")
+    check('19 no-results state explains what to try next', 'couldn' in h.inner_text('#resultContent .rs-empty').lower() and h.locator('#resultContent .rs-empty li').count() >= 2)
+    check('19 no-results state hides follow-up chat and flashcards', not h.is_visible('#chatBox') and not h.is_visible('#cardsBox'))
+    state['webhook_mode'] = 'fail'
+    h.click('#searchBtn'); h.wait_for_selector('#errorBox.visible')
+    check('19 errors say what to do next and link to curated topics', h.locator('#errorBox .err-hint a[href="/topics/"]').count() == 1)
     state['webhook_mode'] = 'ok'
     browser.close()
 
