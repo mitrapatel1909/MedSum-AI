@@ -43,90 +43,11 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+  <link rel="stylesheet" href="/site.css"/>
+  <script src="/site.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
  
-    :root {
-      --bg: #f5f2ec;
-      --ink: #1a1a18;
-      --accent: #2d6a4f;
-      --accent-light: #b7e4c7;
-      --muted: #6b6b63;
-      --card: #ffffff;
-      --border: #ddd9d0;
-      --error: #c0392b;
-    }
-    [data-theme="dark"] {
-      --bg: #0f1412;
-      --ink: #e8e4dc;
-      --accent: #4ade80;
-      --accent-light: #166534;
-      --muted: #8a9e92;
-      --card: #1a2420;
-      --border: #2a3830;
-      --error: #f87171;
-    }
-
-    .theme-toggle {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      padding: 0.4rem 0.7rem;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      line-height: 1;
-    }
-    .theme-toggle:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: transparent;
-      transform: none;
-    }
-
- 
-    body {
-      background: var(--bg);
-      color: var(--ink);
-      font-family: 'DM Sans', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
- 
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    header {
-      padding: 0.9rem 2rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: color-mix(in srgb, var(--bg) 93%, transparent);
-      -webkit-backdrop-filter: blur(8px);
-      backdrop-filter: blur(8px);
-    }
-    .brand { display: flex; align-items: baseline; gap: 0.6rem; text-decoration: none; color: inherit; min-width: 0; }
-    .topnav { display: flex; align-items: center; gap: 1.4rem; margin-left: auto; }
-    .topnav a { font-size: 0.85rem; color: var(--muted); text-decoration: none; font-weight: 400; white-space: nowrap; transition: color 0.15s; }
-    .topnav a:hover { color: var(--accent); }
-    .topnav a.nav-cta { color: var(--accent); font-weight: 500; border: 1px solid var(--accent); border-radius: 999px; padding: 0.3rem 0.95rem; }
-    .topnav a.nav-cta:hover { background: var(--accent); color: var(--card); }
- 
-    .logo { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--ink); letter-spacing: -0.02em; }
-    .logo span { color: var(--accent); }
-    .tagline { font-size: 0.72rem; color: var(--muted); font-weight: 300; letter-spacing: 0.08em; text-transform: uppercase; }
  
     main { flex: 1; max-width: 820px; margin: 0 auto; padding: 3rem 2rem 4rem; width: 100%; position: relative; z-index: 5; }
  
@@ -349,8 +270,6 @@
     .subscribe-btn { padding: 0.6rem 1.2rem; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
     .subscribe-btn:hover { background: #52b788; }
  
-    footer { text-align: center; padding: 2rem; font-size: 0.75rem; color: var(--muted); border-top: 1px solid var(--border); position: relative; z-index: 1; }
-    footer a { color: var(--accent); text-decoration: none; }
  
     /* ── FRAMER ANIMATIONS ──────────────────────────────────────── */
  
@@ -468,9 +387,6 @@
     .shop-card.in:hover { transform: translateY(-4px); }
  
     @media (max-width: 640px) {
-      header { padding: 0.9rem 1rem; flex-direction: column; align-items: flex-start; gap: 0.6rem; position: static; }
-      .topnav { margin-left: 0; flex-wrap: wrap; gap: 0.5rem 1rem; }
-      .tagline { display: none; }
       main { padding: 1.75rem 1rem 3rem; }
       .search-box { padding: 1.25rem; }
       .input-row { flex-direction: column; }
@@ -483,18 +399,11 @@
     }
 
     /* ── Accessibility, trust and study-guide additions ── */
-    .skip-link { position: absolute; left: -9999px; top: 0; background: var(--accent); color: #fff; padding: 0.6rem 1rem; border-radius: 0 0 8px 0; z-index: 200; font-size: 0.85rem; text-decoration: none; }
-    .skip-link:focus { left: 0; }
-    :focus-visible { outline: 2px solid var(--accent) !important; outline-offset: 2px; }
     #resultBox:focus { outline: none !important; }
     .result-disclaimer { padding: 0.9rem 2rem; border-top: 1px solid var(--border); font-size: 0.78rem; line-height: 1.55; color: var(--muted); }
     .guide-skip { display: block; width: 100%; margin-top: 0.75rem; background: none; border: none; color: var(--muted); font-size: 0.82rem; font-family: 'DM Sans', sans-serif; text-decoration: underline; cursor: pointer; }
     .guide-skip:hover { color: var(--accent); }
     @media (max-width: 640px) { .result-disclaimer { padding: 0.9rem 1.25rem; } }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
-    }
-    @media (max-width: 480px) { .topnav { gap: 0.5rem 0.8rem; } }
 
     /* ── Demo preview ── */
     .demo-preview { max-width: 760px; margin: 0 auto 2.5rem; padding: 0 1.25rem; }
@@ -547,15 +456,6 @@
     .pill.cat-tab.active:hover { background: var(--accent); color: var(--card); }
     .topic-group { display: none; flex-wrap: wrap; gap: 0.4rem; }
     .topic-group.active { display: flex; }
-
-    .skeleton-card { text-align: left; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin: 2rem 0 0; }
-    .sk { border-radius: 6px; background: linear-gradient(90deg, var(--border) 25%, color-mix(in srgb, var(--border) 45%, var(--card)) 50%, var(--border) 75%); background-size: 200% 100%; animation: skShimmer 1.4s linear infinite; }
-    .sk-title { height: 14px; width: 34%; margin-bottom: 1.1rem; }
-    .sk-line { height: 10px; margin-bottom: 0.6rem; }
-    .sk-line.short { width: 60%; }
-    .sk-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.25rem; }
-    .sk-box { height: 74px; border-radius: 12px; }
-    @keyframes skShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
     .error-box .err-hint { display: block; margin-top: 0.5rem; font-size: 0.82rem; color: var(--muted); }
     .error-box .err-hint a { color: var(--accent); }
@@ -628,7 +528,7 @@
     <a href="/methodology.html">How it works</a>
     <a href="#shop">Study Guides</a>
     <a href="#" id="myLibraryLink" onclick="openLibrary(); return false;" style="display:none">My Summaries</a>
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+    <button class="theme-toggle" id="themeToggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
     <div class="user-menu" id="userMenu">
       <button class="user-btn" onclick="showModal('login')">Log in</button>
       <button class="user-btn primary" onclick="showModal('signup')">Sign up</button>
@@ -1117,8 +1017,11 @@
   </div>
 </section>
 
-<footer>
-  Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a> &amp; OpenAI &nbsp;·&nbsp; <a href="/methodology.html">How it works</a> &nbsp;·&nbsp; <a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank">GitHub</a> &nbsp;·&nbsp; <a href="privacy.html">Privacy Policy</a><br><span style="opacity:0.8">For education only. Not medical advice.</span>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="/">Home</a><a href="/topics/">Topics</a><a href="/compare">Compare</a><a href="/methodology.html">How it works</a><a href="/privacy.html">Privacy</a><a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <p>Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed</a> &amp; OpenAI. For education only. Not medical advice.</p>
 </footer>
  
 <script>
@@ -2246,30 +2149,6 @@
     cards.forEach(c => observer.observe(c));
   })();
 
-  // ── THEME TOGGLE ────────────────────────────────────────────
-  function toggleTheme() {
-    const html = document.documentElement;
-    const btn = document.getElementById('themeToggle');
-    if (html.getAttribute('data-theme') === 'dark') {
-      html.removeAttribute('data-theme');
-      btn.textContent = '🌙';
-      localStorage.setItem('theme', 'light');
-    } else {
-      html.setAttribute('data-theme', 'dark');
-      btn.textContent = '☀️';
-      localStorage.setItem('theme', 'dark');
-    }
-  }
-
-  // Apply saved theme on load
-  (function() {
-    const saved = localStorage.getItem('theme');
-    if (saved === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      const btn = document.getElementById('themeToggle');
-      if (btn) btn.textContent = '☀️';
-    }
-  })();
 </script>
 </body>
 </html>
