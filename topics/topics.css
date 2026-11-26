@@ -45,7 +45,7 @@ main.topic h1 em { font-style: italic; color: var(--accent); }
 .pills { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 1.5rem; }
 .pill { padding: 0.4rem 0.95rem; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; font: inherit; font-size: 0.85rem; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
 .pill:hover { border-color: var(--accent); color: var(--accent); }
-.pill.active { background: var(--accent); color: var(--card); border-color: var(--accent); }
+.pill.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 
 .search-row { position: relative; margin: 0 0 1rem; }
 .search-row input { width: 100%; padding: 0.8rem 2.6rem 0.8rem 1rem; font: inherit; font-size: 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); color: var(--ink); }

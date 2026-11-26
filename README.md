@@ -24,7 +24,9 @@ Summaries use PubMed abstracts only, not full-text articles. The Evidence Snapsh
 
 | Piece | What it does |
 |---|---|
-| Static site (`index.html`, `privacy.html`, `news.html`) | The whole frontend: plain HTML, CSS and JavaScript, no build step |
+| Static site (`index.html`, `compare.html`, `methodology.html`, `privacy.html`, `news.html`, `topics/`) | The whole frontend: plain HTML, CSS and JavaScript, no build step |
+| Shared design (`site.css`, `site.js`) | One stylesheet and one script linked from every page: colour tokens for light and dark mode, header, footer, buttons, cards, and the theme toggle (one `theme` setting remembered across pages). Change a colour or the header once and it changes everywhere. Text on a green button uses `--on-accent`, never plain white, so it stays readable in dark mode |
+| Topic pages (`content/topics/*.json`, `tools/build_topics.py`) | `python3 tools/build_topics.py` writes `topics/*.html`, `topics/index.html` and `sitemap.xml`. Edit the JSON or the generator, then re-run it; do not edit the generated pages by hand |
 | GitHub Pages + Cloudflare | Hosting and the `medsumai.com` domain |
 | Cloudflare Worker (`worker/`, served at `api.medsumai.com`) | The backend: PubMed search, abstract parsing, the OpenAI call, per-visitor rate limits and a daily spending cap |
 | Supabase | Accounts (Auth), saved summaries, the public summary counter, mailing list |
@@ -75,7 +77,9 @@ Each email has an unsubscribe link (a confirm page, so link scanners cannot unsu
 ## Tests
 
 - `cd worker && npm test`: unit tests for the Worker (PubMed parsing, citation checking, limits, validation, error handling, weekly digest and unsubscribe).
-- `python3 tests/test_site.py`: browser tests for the site with the network stubbed (needs Playwright and Chromium).
+- `python3 tests/test_site.py`: browser tests for the home page with the network stubbed (needs Playwright and Chromium).
+- `python3 tests/test_pages.py`: browser tests for every page. Shared header, footer and theme on all pages, no sideways scrolling, WCAG contrast of all text in light and dark mode at desktop and phone widths, and the whole Compare flow (search, pick, compare, copy, every error).
+- `python3 tests/test_topics.py`: checks the topic generator and the generated pages (no browser needed).
 
 ## Known limitations
 
