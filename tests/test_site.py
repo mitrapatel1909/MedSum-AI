@@ -248,6 +248,16 @@ with sync_playwright() as p:
           and attr('meta[property="og:image"]', 'content') == 'https://medsumai.com/og-image.png'
           and attr('meta[name="twitter:image"]', 'content') == 'https://medsumai.com/og-image.png')
     check('12 favicon links present', h.locator('link[rel=icon]').count() == 2)
+    # Compare is a main feature, so each public description of the product (what search results and
+    # link previews show) has to say so. A JSON-LD block that does not parse counts as empty.
+    descriptions = {
+        'meta description': attr('meta[name="description"]', 'content'),
+        'og:description': attr('meta[property="og:description"]', 'content'),
+        'twitter:description': attr('meta[name="twitter:description"]', 'content'),
+        'JSON-LD description': h.evaluate("""(() => { try { return JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent).description || ''; } catch (e) { return ''; } })()"""),
+    }
+    for what, text in descriptions.items():
+        check(f'12 {what} mentions comparing papers', 'compar' in (text or '').lower(), (text or 'missing or unreadable')[:90])
     for f in ('favicon.svg', 'favicon.ico', 'og-image.png', 'robots.txt', 'sitemap.xml'):
         st = ctx.request.get(f'http://127.0.0.1:{PORT}/{f}').status
         check(f'12 /{f} is served (200)', st == 200, str(st))
