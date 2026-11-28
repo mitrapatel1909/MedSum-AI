@@ -276,6 +276,7 @@ Rules you must follow:
 - Never invent populations, methods, findings, or numbers that do not appear in the abstracts.
 - Be precise and concise; every cell is read in a comparison table.
 - Never give personal medical advice.
+- For every agreement and disagreement, list in pmids the PMID of each paper that point rests on. Use only PMIDs that appear in <articles>, and keep PMIDs and citations out of the point text. An agreement rests on at least two papers.
 - Return ONLY valid JSON \u2014 no markdown fences, no commentary, no text before or after the JSON.
 
 Output this exact JSON structure:
@@ -292,8 +293,14 @@ Output this exact JSON structure:
   ],
   "synthesis": {
     "summary": "<2\u20133 sentence narrative of what these papers collectively show>",
-    "agreements": ["<point where papers agree>", ...],
-    "disagreements": ["<point where papers disagree or find conflicting results>", ...]
+    "agreements": [
+      { "point": "<point where papers agree>", "pmids": ["<PMID of each paper that supports it>"] },
+      ...
+    ],
+    "disagreements": [
+      { "point": "<point where papers disagree or find conflicting results>", "pmids": ["<PMID of each paper involved>"] },
+      ...
+    ]
   },
   "research_gaps": [
     "<specific unanswered question or underrepresented population>",
@@ -357,17 +364,43 @@ function list(v) {
   }
   return out;
 }
-function synthesisOf(v) {
-  if (typeof v === "string" && v.trim()) v = { summary: v };
-  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
-  return { summary: text(v.summary, MAX_SUMMARY), agreements: list(v.agreements), disagreements: list(v.disagreements) };
-}
 var pmidOf = (v) => typeof v === "string" || typeof v === "number" ? String(v).trim().replace(/^PMID:?\s*/i, "") : "";
 var isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+function pmidsIn(v) {
+  const s = Array.isArray(v) ? v.filter((x) => typeof x === "string" || typeof x === "number").join(" ") : typeof v === "string" || typeof v === "number" ? String(v) : "";
+  return s.match(/(?<!\d)\d{1,9}(?!\d)/g) || [];
+}
+function pointOf(item, order) {
+  if (!isObject(item)) return { text: text(item, MAX_ITEM), pmids: [] };
+  const named = /* @__PURE__ */ new Set([...pmidsIn(item.pmids), ...pmidsIn(item.pmid)]);
+  return { text: text(item.point ?? item.text ?? item.claim, MAX_ITEM), pmids: order.filter((p) => named.has(p)) };
+}
+function pointsOf(v, order) {
+  const out = [];
+  if (!Array.isArray(v)) return out;
+  for (const item of v) {
+    const point = pointOf(item, order);
+    if (point.text) out.push(point);
+    if (out.length === MAX_ITEMS) break;
+  }
+  return out;
+}
+function synthesisOf(v, order) {
+  if (typeof v === "string" && v.trim()) v = { summary: v };
+  if (!isObject(v)) return null;
+  const agreements = pointsOf(v.agreements, order);
+  const disagreements = pointsOf(v.disagreements, order);
+  const synthesis = { summary: text(v.summary, MAX_SUMMARY), agreements: agreements.map((p) => p.text), disagreements: disagreements.map((p) => p.text) };
+  const all = [...agreements, ...disagreements];
+  if (all.some((p) => p.pmids.length)) {
+    synthesis.cited_pmids = { agreements: agreements.map((p) => p.pmids), disagreements: disagreements.map((p) => p.pmids) };
+  }
+  return { synthesis, points: { total: all.length, unnamed: all.filter((p) => !p.pmids.length).length } };
+}
 function validateComparison(parsed, articles) {
   const reject = (reason) => ({ ok: false, reason });
   if (!isObject(parsed) || !Array.isArray(parsed.papers) || !Array.isArray(parsed.research_gaps)) return reject("format");
-  const synthesis = synthesisOf(parsed.synthesis);
+  const synthesis = synthesisOf(parsed.synthesis, articles.map((a) => a.pmid));
   if (!synthesis) return reject("format");
   const selected = new Set(articles.map((a) => a.pmid));
   const extracted = /* @__PURE__ */ new Map();
@@ -388,7 +421,7 @@ function validateComparison(parsed, articles) {
     if (!row.study_type) row.study_type = a.studyType;
     papers.push(row);
   }
-  return { ok: true, comparison: { papers, synthesis, research_gaps: list(parsed.research_gaps) } };
+  return { ok: true, comparison: { papers, synthesis: synthesis.synthesis, research_gaps: list(parsed.research_gaps) }, points: synthesis.points };
 }
 
 // src/digest.js
@@ -785,7 +818,7 @@ async function handleCompare(request, env, deps) {
   if (articles.length < 2) return json(request, 400, { error: "Could not retrieve abstracts for enough of the selected papers. Please try different papers." });
   let rawJson;
   try {
-    rawJson = await callOpenAI(env, buildCompareMessages(articles), 2400, deps.fetchImpl);
+    rawJson = await callOpenAI(env, buildCompareMessages(articles), 3e3, deps.fetchImpl);
   } catch {
     return json(request, 502, { error: "The comparison engine is temporarily unavailable. Please try again in a few minutes." });
   }
@@ -802,6 +835,7 @@ async function handleCompare(request, env, deps) {
     const mismatch = ["unselected_pmid", "duplicate_pmid", "missing_pmid"].includes(checked.reason);
     return json(request, 502, { error: mismatch ? "The comparison did not match the papers you selected. Please try again." : "The comparison returned an unexpected format. Please try again." });
   }
+  if (checked.points.unnamed) console.warn(`compare: ${checked.points.unnamed} of ${checked.points.total} points named no selected paper`);
   return json(request, 200, { comparison: checked.comparison }, { "Cache-Control": "no-store" });
 }
 async function handleChat(request, env, deps) {

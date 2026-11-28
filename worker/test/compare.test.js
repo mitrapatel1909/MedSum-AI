@@ -3,7 +3,7 @@
 // 11111111 (a meta-analysis) and 22222222 (a cohort study); 33333333 has no abstract.
 import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { validateComparison, COMPARE_FIELDS } from '../src/compare.js';
+import { validateComparison, COMPARE_FIELDS, POINT_FIELDS } from '../src/compare.js';
 import { buildCompareMessages } from '../src/prompt.js';
 import { parseArticles } from '../src/pubmed.js';
 import { makeHandler } from '../src/index.js';
@@ -206,11 +206,176 @@ test('validateComparison: reports why it said no', () => {
   assert.equal(why(answer([row('11111111'), { pmid: '22222222' }])), 'empty_paper');
 });
 
+// ── Which papers each point comes from ────────────────────────────────────────
+// Every agreement and disagreement is asked to name the selected papers it rests on. What is said is checked as
+// far as it can be (the papers must be among the selected ones) and the rest is dropped. None of it can make an
+// answer fail.
+
+const point = (text, pmids) => ({ point: text, pmids });
+const synth = (agreements, disagreements = []) => ({ summary: 'Summary.', agreements, disagreements });
+const pointsAnswer = (agreements, disagreements) => answer(BOTH(), { synthesis: synth(agreements, disagreements) });
+const cited = (agreements, disagreements) => validateComparison(pointsAnswer(agreements, disagreements), ARTICLES).comparison.synthesis.cited_pmids;
+
+test('compare: each agreement and disagreement says which of the selected papers it comes from', async () => {
+  const model = pointsAnswer(
+    [point('Both report a benefit.', ['11111111', '22222222']), point('Only the review looked at doses.', ['11111111'])],
+    [point('The size of the effect differs.', ['22222222', '11111111'])]
+  );
+  const { res, body } = await ask(model);
+  assert.equal(res.status, 200);
+  assert.deepEqual(body.comparison.synthesis, {
+    summary: 'Summary.',
+    agreements: ['Both report a benefit.', 'Only the review looked at doses.'],
+    disagreements: ['The size of the effect differs.'],
+    cited_pmids: { agreements: [['11111111', '22222222'], ['11111111']], disagreements: [['11111111', '22222222']] },
+  });
+});
+
+test('compare: the papers a point names come back in the order the reader selected them', async () => {
+  const { body } = await ask(pointsAnswer([point('Both report a benefit.', ['11111111', '22222222'])]), ['22222222', '11111111']);
+  assert.deepEqual(body.comparison.papers.map((p) => p.pmid), ['22222222', '11111111']);
+  assert.deepEqual(body.comparison.synthesis.cited_pmids.agreements, [['22222222', '11111111']]);
+});
+
+test('compare: an answer that names no papers is exactly what it was before this existed', async () => {
+  const { res, body } = await ask(answer(BOTH()));
+  assert.equal(res.status, 200);
+  assert.deepEqual(Object.keys(body.comparison.synthesis), ['summary', 'agreements', 'disagreements']);
+  assert.deepEqual(body.comparison.synthesis, SYNTHESIS);
+});
+
+test('compare: a paper that was not selected is dropped from a point, and the point stays', async () => {
+  const { res, body } = await ask(pointsAnswer([point('Both report a benefit.', ['99999999', '11111111', '22222222']), point('A claim about nothing selected.', ['99999999'])]));
+  assert.equal(res.status, 200);
+  assert.deepEqual(body.comparison.synthesis.agreements, ['Both report a benefit.', 'A claim about nothing selected.']);
+  assert.deepEqual(body.comparison.synthesis.cited_pmids, { agreements: [['11111111', '22222222'], []], disagreements: [] });
+  assert.doesNotMatch(JSON.stringify(body), /99999999/);
+});
+
+test('compare: when no point names a selected paper there is no cited_pmids at all, and the answer still stands', async () => {
+  const { res, body } = await ask(pointsAnswer([point('Both report a benefit.', ['99999999']), point('Another.', [])], [point('Differs.', undefined)]));
+  assert.equal(res.status, 200);
+  assert.deepEqual(body.comparison.synthesis, { summary: 'Summary.', agreements: ['Both report a benefit.', 'Another.'], disagreements: ['Differs.'] });
+});
+
+test('compare: a point naming papers is counted in the log when others name none, without any of the text', async () => {
+  console.warn.mock.resetCalls();
+  await ask(pointsAnswer([point('Secret wording A.', ['11111111']), point('Secret wording B.', [])], [point('Secret wording C.', ['99999999'])]));
+  await ask(pointsAnswer([point('Named.', ['11111111', '22222222'])]));
+  await ask(answer(BOTH())); // the older shape names nothing: 2 points, both unnamed
+  const lines = console.warn.mock.calls.map((c) => c.arguments.join(' '));
+  assert.deepEqual(lines, ['compare: 2 of 3 points named no selected paper', 'compare: 2 of 2 points named no selected paper']);
+  assert.doesNotMatch(lines.join(' '), /Secret|1111|9999/);
+});
+
+test('validateComparison: PMIDs may be numbers, prefixed, padded, or listed in one string', () => {
+  const both = [['11111111', '22222222']];
+  for (const written of [
+    ['11111111', '22222222'],
+    [11111111, 22222222],
+    ['PMID: 11111111', 'PMID 22222222'],
+    [' 11111111 ', '\n22222222\n'],
+    '11111111, 22222222',
+    'PMID: 11111111; PMID: 22222222',
+    '11111111 and 22222222',
+    ['PMID11111111', 'PMID22222222'],
+  ]) {
+    assert.deepEqual(cited([point('Both.', written)]).agreements, both, JSON.stringify(written));
+  }
+});
+
+test('validateComparison: a number is a PMID only when it stands alone', () => {
+  // Two nine-digit PMIDs, and a longer number that is just those two written back to back.
+  const nine = [{ ...ARTICLES[0], pmid: '123456789' }, { ...ARTICLES[1], pmid: '987654321' }];
+  const named = (pmids) => validateComparison(answer([row('123456789'), row('987654321')], { synthesis: synth([point('x', pmids)]) }), nine).comparison.synthesis.cited_pmids;
+  assert.equal(named('123456789987654321'), undefined);
+  assert.equal(named('1234567890'), undefined); // ten digits: not 123456789 with a stray 0
+  assert.deepEqual(named('PMID:123456789.').agreements, [['123456789']]);
+  assert.equal(named(['2021', '3', '1.5']), undefined);
+});
+
+test('validateComparison: the same paper named twice is named once', () => {
+  assert.deepEqual(cited([point('x', ['22222222', 22222222, 'PMID: 22222222'])]).agreements, [['22222222']]);
+});
+
+test('validateComparison: a plain-text point is still a point, and can sit beside ones that name papers', () => {
+  const r = validateComparison(pointsAnswer(['A plain sentence.', point('A sentence with a paper.', ['22222222'])], ['Plain again.']), ARTICLES);
+  assert.deepEqual(r.comparison.synthesis.agreements, ['A plain sentence.', 'A sentence with a paper.']);
+  assert.deepEqual(r.comparison.synthesis.cited_pmids, { agreements: [[], ['22222222']], disagreements: [[]] });
+});
+
+test('validateComparison: text and papers stay in step when a point has to be dropped', () => {
+  const r = validateComparison(
+    pointsAnswer([point('', ['11111111']), point('   ', ['11111111']), null, 7, point('Kept.', ['22222222']), { pmids: ['11111111'] }, { point: { not: 'text' }, pmids: ['11111111'] }]),
+    ARTICLES
+  );
+  assert.deepEqual(r.comparison.synthesis.agreements, ['7', 'Kept.']);
+  assert.deepEqual(r.comparison.synthesis.cited_pmids.agreements, [[], ['22222222']]);
+});
+
+test('validateComparison: the 8-point limit applies to the papers too', () => {
+  const many = Array.from({ length: 12 }, (_, i) => point(`Point ${i + 1}`, [i % 2 ? '11111111' : '22222222']));
+  const s = validateComparison(pointsAnswer(many, many), ARTICLES).comparison.synthesis;
+  assert.equal(s.agreements.length, 8);
+  assert.equal(s.cited_pmids.agreements.length, 8);
+  assert.equal(s.disagreements.length, 8);
+  assert.equal(s.cited_pmids.disagreements.length, 8);
+  assert.deepEqual(s.cited_pmids.agreements[7], ['11111111']);
+});
+
+test('validateComparison: other names for the sentence and the papers are understood, and nothing else is kept', () => {
+  const r = validateComparison(
+    pointsAnswer([
+      { text: 'Said as text.', pmid: '11111111' },
+      { claim: 'Said as a claim.', pmids: 22222222 },
+      { point: 'Extras.', pmids: ['11111111'], quote: 'Invented quote', confidence: 0.99, url: 'https://evil.example/x' },
+    ]),
+    ARTICLES
+  );
+  assert.deepEqual(r.comparison.synthesis.agreements, ['Said as text.', 'Said as a claim.', 'Extras.']);
+  assert.deepEqual(r.comparison.synthesis.cited_pmids.agreements, [['11111111'], ['22222222'], ['11111111']]);
+  assert.doesNotMatch(JSON.stringify(r.comparison), /Invented quote|0\.99|evil\.example/);
+});
+
+test('validateComparison: the sentence is cleaned like any other model text, whatever it is called', () => {
+  const messy = '  Both \n report\u0000 a   benefit. ';
+  const s = validateComparison(pointsAnswer([point(messy, ['11111111']), point('word '.repeat(200), ['22222222']), { text: messy, pmids: ['11111111'] }, { claim: messy, pmids: ['11111111'] }]), ARTICLES).comparison.synthesis;
+  assert.equal(s.agreements[0], 'Both report a benefit.');
+  assert.ok(s.agreements[1].length <= 501 && s.agreements[1].endsWith('…'));
+  assert.deepEqual(s.agreements.slice(2), ['Both report a benefit.', 'Both report a benefit.']);
+  assert.deepEqual(s.cited_pmids.agreements, [['11111111'], ['22222222'], ['11111111'], ['11111111']]);
+});
+
+test('validateComparison: nothing the model writes about the papers behind a point can make the answer fail', () => {
+  for (const pmids of [null, undefined, '', 'none', 5, true, {}, [], [null], [{}], [['11111111']], [[]], { 11111111: true }, ['PMID'], [false, 0]]) {
+    const r = validateComparison(pointsAnswer([point('Still here.', pmids)], [{ point: 'And here.', pmids }]), ARTICLES);
+    assert.equal(r.ok, true, JSON.stringify(pmids));
+    assert.deepEqual(r.comparison.synthesis.agreements, ['Still here.']);
+    assert.deepEqual(r.comparison.synthesis.disagreements, ['And here.']);
+    assert.equal('cited_pmids' in r.comparison.synthesis, false, JSON.stringify(pmids));
+  }
+});
+
+test('validateComparison: says how many points there were and how many named no selected paper', () => {
+  const count = (a, d) => validateComparison(pointsAnswer(a, d), ARTICLES).points;
+  assert.deepEqual(count([point('a', ['11111111']), point('b', []), 'c'], [point('d', ['99999999']), point('e', ['22222222'])]), { total: 5, unnamed: 3 });
+  assert.deepEqual(count([], []), { total: 0, unnamed: 0 });
+  assert.deepEqual(validateComparison(answer(BOTH(), { synthesis: 'Both agree.' }), ARTICLES).points, { total: 0, unnamed: 0 });
+});
+
 // ── The prompt and the validator must agree ───────────────────────────────────
 
 test('the prompt asks for exactly the keys the validator reads (a new key in one must be added to the other)', () => {
   const system = buildCompareMessages(ARTICLES)[0].content;
   const asked = [...new Set([...system.matchAll(/"([a-z_]+)"\s*:/g)].map((m) => m[1]))].sort();
-  const read = ['papers', 'pmid', ...COMPARE_FIELDS, 'synthesis', 'summary', 'agreements', 'disagreements', 'research_gaps'].sort();
+  const read = ['papers', 'pmid', ...COMPARE_FIELDS, 'synthesis', 'summary', 'agreements', 'disagreements', ...POINT_FIELDS, 'research_gaps'].sort();
   assert.deepEqual(asked, read);
+});
+
+test('the prompt tells the model to name the papers behind each point, from the PMIDs it was given', () => {
+  const system = buildCompareMessages(ARTICLES)[0].content;
+  assert.match(system, /list in pmids the PMID of each paper that point rests on/);
+  assert.match(system, /only PMIDs that appear in <articles>/);
+  // The model-facing JSON is not the page-facing one: cited_pmids is made by the code, never asked for.
+  assert.doesNotMatch(system, /cited_pmids/);
 });
