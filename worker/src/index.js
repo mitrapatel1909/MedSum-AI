@@ -1,6 +1,9 @@
 // MedSumAI backend: one Cloudflare Worker replacing the public n8n webhooks.
 //   POST /summarize  { topic, level? }          -> Markdown summary
 //   POST /chat       { question, summary }      -> Markdown answer
+//   POST /flashcards { summary }                -> { cards: [{ front, back }] }
+//   POST /compare/search { topic }              -> { papers }: the first 10 PubMed papers, to pick 2-5 from
+//   POST /compare    { pmids }                  -> { comparison }: the 2-5 picked papers side by side, checked against PubMed
 //   GET  /health                                -> "ok"
 //   GET/POST /unsubscribe?token=...              -> weekly email unsubscribe page
 //   POST /admin/digest-preview (Bearer token)    -> dry-run of the weekly email, never sends
@@ -8,6 +11,7 @@
 
 import { searchPubMed, parseInput, fetchPaper, fetchPapersByPmids } from './pubmed.js';
 import { buildSummaryMessages, buildChatMessages, buildCardMessages, parseCards, assembleSummary, buildCompareMessages, DEFAULT_LEVEL, LEVELS } from './prompt.js';
+import { validateComparison } from './compare.js';
 import { runDigest, handleUnsubscribe } from './digest.js';
 export { Limiter } from './limiter.js';
 
@@ -191,7 +195,7 @@ async function runSummary({ env, deps, topic, paper, level }, emit = () => {}) {
 // ── Compare Research endpoints ────────────────────────────────────────────────
 
 // POST /compare/search  { topic }
-// Returns the first 10 PubMed papers for a topic so the user can select 3-5 to compare.
+// Returns the first 10 PubMed papers for a topic so the user can select 2-5 to compare.
 async function handleCompareSearch(request, env, deps) {
   const { body, error } = await readBody(request);
   if (error) return json(request, 400, { error });
@@ -224,8 +228,9 @@ async function handleCompareSearch(request, env, deps) {
   return json(request, 200, { papers }, { 'Cache-Control': 'no-store' });
 }
 
-// POST /compare  { pmids: ['12345678', ...] }   (3–5 PMIDs)
-// Fetches abstracts, extracts structured data, returns comparison JSON.
+// POST /compare  { pmids: ['12345678', ...] }   (2–5 PMIDs)
+// Fetches abstracts, has the model extract structured data, returns comparison JSON. The model's answer is
+// never passed through: validateComparison (compare.js) rebuilds it from the PubMed records, or rejects it.
 async function handleCompare(request, env, deps) {
   const { body, error } = await readBody(request);
   if (error) return json(request, 400, { error });
@@ -264,18 +269,15 @@ async function handleCompare(request, env, deps) {
     return json(request, 502, { error: 'Could not parse the comparison. Please try again.' });
   }
 
-  if (!parsed || !Array.isArray(parsed.papers) || !parsed.synthesis || !Array.isArray(parsed.research_gaps)) {
-    return json(request, 502, { error: 'The comparison returned an unexpected format. Please try again.' });
+  const checked = validateComparison(parsed, articles);
+  if (!checked.ok) {
+    // Only the reason is logged, never the model's text. It shows how often the model gets this wrong.
+    console.warn(`compare: model answer rejected (${checked.reason})`);
+    const mismatch = ['unselected_pmid', 'duplicate_pmid', 'missing_pmid'].includes(checked.reason);
+    return json(request, 502, { error: mismatch ? 'The comparison did not match the papers you selected. Please try again.' : 'The comparison returned an unexpected format. Please try again.' });
   }
 
-  // Enrich each extracted paper with the original PubMed metadata
-  const byPmid = new Map(articles.map((a) => [a.pmid, a]));
-  for (const p of parsed.papers) {
-    const orig = byPmid.get(String(p.pmid));
-    if (orig) Object.assign(p, { title: orig.title, year: orig.year, journal: orig.journal, url: orig.url });
-  }
-
-  return json(request, 200, { comparison: parsed }, { 'Cache-Control': 'no-store' });
+  return json(request, 200, { comparison: checked.comparison }, { 'Cache-Control': 'no-store' });
 }
 
 async function handleChat(request, env, deps) {
