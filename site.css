@@ -1,0 +1,146 @@
+/* MedSumAI shared design system. Linked from every page (before the page's own <style>).
+   Tokens, base, header, footer, buttons, cards and the small helpers all pages share.
+   Page-specific layout stays in each page; anything used on 2+ pages belongs here. */
+
+/* ── Tokens ───────────────────────────────────────────────────────── */
+:root {
+  --bg: #f5f2ec;
+  --ink: #1a1a18;
+  --accent: #2d6a4f;
+  --accent-light: #b7e4c7;
+  --muted: #6b6b63;
+  --card: #ffffff;
+  --border: #ddd9d0;
+  --error: #c0392b;
+  --warn: #9a5318;               /* amber text on its own tint needs >= 4.5:1; the old #b06020 gave 4.1 */
+  --on-accent: #ffffff;          /* text on an --accent background (white on the dark green) */
+  --accent-hover: color-mix(in srgb, var(--accent) 85%, #000);
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
+}
+[data-theme="dark"] {
+  --bg: #0f1412;
+  --ink: #e8e4dc;
+  --accent: #4ade80;
+  --accent-light: #166534;
+  --muted: #8a9e92;
+  --card: #1a2420;
+  --border: #2a3830;
+  --error: #f87171;
+  --warn: #d4973a;
+  --on-accent: #0f1412;          /* the dark-mode accent is a light green, so its text is dark */
+}
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+/* faint paper grain, same on every page */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip-link { position: absolute; left: -9999px; top: 0; background: var(--accent); color: var(--on-accent); padding: 0.6rem 1rem; border-radius: 0 0 8px 0; z-index: 200; font-size: 0.85rem; text-decoration: none; }
+.skip-link:focus { left: 0; }
+:focus-visible { outline: 2px solid var(--accent) !important; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* ── Header (identical on every page) ─────────────────────────────── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 93%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.brand { display: flex; align-items: baseline; gap: 0.6rem; text-decoration: none; color: inherit; min-width: 0; }
+.logo { font-family: var(--font-serif); font-size: 2rem; color: var(--ink); letter-spacing: -0.02em; text-decoration: none; line-height: 1.2; }
+.logo span { color: var(--accent); }
+.tagline { font-size: 0.72rem; color: var(--muted); font-weight: 300; letter-spacing: 0.08em; text-transform: uppercase; }
+.topnav { display: flex; align-items: center; gap: 1.4rem; margin-left: auto; }
+.topnav a { font-size: 0.85rem; color: var(--muted); text-decoration: none; font-weight: 400; white-space: nowrap; transition: color 0.15s; }
+.topnav a:hover, .topnav a[aria-current="page"] { color: var(--accent); }
+.topnav a[aria-current="page"] { font-weight: 500; }
+.topnav a.nav-cta { color: var(--accent); font-weight: 500; border: 1px solid var(--accent); border-radius: 999px; padding: 0.3rem 0.95rem; }
+.topnav a.nav-cta:hover, .topnav a.nav-cta[aria-current="page"] { background: var(--accent); color: var(--on-accent); }
+.theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 0.4rem 0.7rem; border-radius: var(--radius-sm); font-size: 1rem; cursor: pointer; transition: border-color 0.2s, color 0.2s; line-height: 1; font-family: inherit; }
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); background: transparent; transform: none; }
+@media (max-width: 640px) {
+  .site-header { position: static; flex-direction: column; align-items: flex-start; gap: 0.6rem; padding: 0.9rem 1rem; }
+  .topnav { margin-left: 0; flex-wrap: wrap; gap: 0.5rem 1rem; }
+  .tagline { display: none; }
+}
+
+/* ── Page container ───────────────────────────────────────────────── */
+.page-wrap { width: 100%; max-width: 760px; margin: 0 auto; padding: 3rem 1.5rem 5rem; position: relative; z-index: 1; }
+.page-wrap.narrow { max-width: 720px; }
+.page-wrap.wide { max-width: 1000px; }
+@media (max-width: 640px) { .page-wrap { padding: 2rem 1.1rem 3.5rem; } }
+
+/* ── Page heading (label, title, lead) ────────────────────────────── */
+.page-header { margin-bottom: 2.25rem; }
+.page-label { display: inline-block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); padding: 0.3rem 0.9rem; border-radius: 999px; margin-bottom: 1rem; }
+.page-header h1 { font-family: var(--font-serif); font-weight: 400; font-size: clamp(1.9rem, 4.5vw, 2.6rem); line-height: 1.15; letter-spacing: -0.025em; color: var(--ink); margin: 0 0 0.7rem; }
+.page-header h1 em { font-style: italic; color: var(--accent); }
+.page-header p { font-size: 1rem; color: var(--muted); line-height: 1.7; max-width: 580px; margin: 0; }
+
+/* ── Buttons ──────────────────────────────────────────────────────── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.85rem 1.6rem; border-radius: 10px; border: 1.5px solid var(--accent); background: var(--accent); color: var(--on-accent); font-family: inherit; font-size: 0.95rem; font-weight: 500; line-height: 1.2; text-decoration: none; cursor: pointer; white-space: nowrap; transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s; }
+.btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn:active { transform: scale(0.98); }
+.btn:disabled, .btn[aria-disabled="true"] { background: var(--border); border-color: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
+.btn-secondary { background: transparent; border-color: var(--border); color: var(--muted); padding: 0.6rem 1.2rem; font-size: 0.85rem; }
+.btn-secondary:hover { background: transparent; border-color: var(--accent); color: var(--accent); }
+.btn-secondary:disabled { background: transparent; border-color: var(--border); color: var(--muted); opacity: 0.55; }
+.btn-sm { padding: 0.4rem 0.9rem; font-size: 0.78rem; border-radius: 8px; }
+
+/* ── Cards, chips, notices ────────────────────────────────────────── */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem; margin-bottom: 1.5rem; }
+.card-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.9rem; }
+.chip { display: inline-block; font-size: 0.74rem; font-weight: 500; padding: 0.25rem 0.7rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); background: var(--bg); white-space: nowrap; }
+.chip-accent { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.notice { padding: 0.9rem 1.1rem; border-radius: 10px; border: 1px solid var(--border); background: var(--card); font-size: 0.88rem; line-height: 1.6; color: var(--muted); }
+.notice-warn { border-color: color-mix(in srgb, var(--warn) 35%, var(--border)); background: color-mix(in srgb, var(--warn) 8%, var(--card)); color: var(--ink); }
+.notice-error { border-color: color-mix(in srgb, var(--error) 35%, var(--border)); background: color-mix(in srgb, var(--error) 8%, var(--card)); color: var(--error); }
+
+/* ── Loading skeleton ─────────────────────────────────────────────── */
+.skeleton-card { text-align: left; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; margin: 1.5rem 0 0; }
+.sk { border-radius: 6px; background: linear-gradient(90deg, var(--border) 25%, color-mix(in srgb, var(--border) 45%, var(--card)) 50%, var(--border) 75%); background-size: 200% 100%; animation: skShimmer 1.4s linear infinite; }
+.sk-title { height: 14px; width: 34%; margin-bottom: 1.1rem; }
+.sk-line { height: 10px; margin-bottom: 0.6rem; }
+.sk-line.short { width: 60%; }
+.sk-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.25rem; }
+.sk-box { height: 74px; border-radius: 12px; }
+@keyframes skShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ── Footer (identical on every page) ─────────────────────────────── */
+.site-footer { margin-top: auto; text-align: center; padding: 2rem 1.5rem; font-size: 0.78rem; color: var(--muted); border-top: 1px solid var(--border); position: relative; z-index: 1; }
+.site-footer a { color: var(--muted); text-decoration: none; }
+.site-footer a:hover { color: var(--accent); text-decoration: underline; }
+.footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 1.1rem; margin-bottom: 0.7rem; }
+.site-footer p { margin: 0.35rem auto 0; max-width: 640px; line-height: 1.6; }

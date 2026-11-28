@@ -34,194 +34,45 @@
     }
   }
   </script>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/site.css"/>
+  <script src="/site.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #f5f2ec;
-      --ink: #1a1a18;
-      --accent: #2d6a4f;
-      --accent-light: #b7e4c7;
-      --muted: #6b6b63;
-      --card: #ffffff;
-      --border: #ddd9d0;
-      --error: #c0392b;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--ink);
-      font-family: 'DM Sans', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* Header — identical to index.html */
-    header {
-      padding: 2.5rem 3rem 1.5rem;
-      display: flex;
-      align-items: flex-end;
-      gap: 1rem;
-      border-bottom: 1px solid var(--border);
-      position: relative;
-      z-index: 1;
-    }
-
-    .logo { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--ink); letter-spacing: -0.02em; text-decoration: none; }
-    .logo span { color: var(--accent); }
-    .tagline { font-size: 0.8rem; color: var(--muted); font-weight: 300; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.25rem; }
-
-    nav { margin-left: auto; display: flex; gap: 1.5rem; align-items: center; }
-    nav a { font-size: 0.85rem; color: var(--muted); text-decoration: none; transition: color 0.15s; }
-    nav a:hover { color: var(--ink); }
-    nav a.active { color: var(--accent); font-weight: 500; }
-
-    /* Main content */
-    main { flex: 1; max-width: 1000px; margin: 0 auto; padding: 4rem 2rem; width: 100%; position: relative; z-index: 1; }
-
     /* Hero */
     .hero { text-align: center; margin-bottom: 3.5rem; }
-    .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 1rem; color: var(--ink); }
+    .hero h1 { font-family: var(--font-serif); font-weight: 400; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 1rem; color: var(--ink); }
     .hero h1 em { font-style: italic; color: var(--accent); }
     .hero p { font-size: 1rem; color: var(--muted); line-height: 1.7; max-width: 480px; margin: 0 auto 1.5rem; }
 
     /* Feed meta bar */
-    .feed-meta-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 0.85rem 1.25rem;
-      margin-bottom: 2.5rem;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
+    .feed-meta-bar { display: flex; align-items: center; justify-content: space-between; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.85rem 1.25rem; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 0.75rem; }
     .feed-meta-left { display: flex; align-items: center; gap: 0.75rem; }
-
-    .live-dot {
-      width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
-      animation: pulse 2s ease-in-out infinite;
-    }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s ease-in-out infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-
-    .feed-date-label { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-    .feed-date-value { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--ink); font-weight: 500; }
-
-    .refresh-btn {
-      font-size: 0.78rem; padding: 0.35rem 0.9rem;
-      background: transparent; border: 1px solid var(--border);
-      color: var(--muted); border-radius: 6px; cursor: pointer;
-      font-family: 'DM Sans', sans-serif; transition: all 0.15s;
-    }
-    .refresh-btn:hover { border-color: var(--accent); color: var(--accent); background: #f0faf4; }
+    .feed-date-label { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .feed-date-value { font-family: var(--font-mono); font-size: 0.75rem; color: var(--ink); font-weight: 500; }
+    .refresh-btn { font-size: 0.78rem; padding: 0.35rem 0.9rem; background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .refresh-btn:hover { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 
     /* Cards grid */
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.25rem;
-    }
-
-    .feed-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      opacity: 0;
-      transform: translateY(16px);
-      animation: cardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .feed-card:hover {
-      border-color: var(--accent-light);
-      box-shadow: 0 4px 20px rgba(45, 106, 79, 0.08);
-    }
-
+    .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+    .feed-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; flex-direction: column; opacity: 0; transform: translateY(16px); animation: cardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards; transition: border-color 0.2s, box-shadow 0.2s; }
+    .feed-card:hover { border-color: var(--accent-light); box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 10%, transparent); }
     @keyframes cardIn { to { opacity: 1; transform: translateY(0); } }
-
-    .card-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-
+    .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
     .card-emoji { font-size: 1.4rem; }
-
-    .card-badge {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--accent);
-      background: #e8f5ee;
-      border: 1px solid var(--accent-light);
-      border-radius: 20px;
-      padding: 0.2rem 0.6rem;
-    }
-
-    .card-category {
-      font-family: 'DM Serif Display', serif;
-      font-size: 1.15rem;
-      color: var(--ink);
-      margin-bottom: 0.6rem;
-      line-height: 1.3;
-    }
-
-    .card-summary {
-      font-size: 0.87rem;
-      color: var(--muted);
-      line-height: 1.65;
-      flex: 1;
-      margin-bottom: 1.25rem;
-    }
-
-    .card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-    }
-
+    .card-badge { font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); border-radius: 20px; padding: 0.2rem 0.6rem; }
+    .card-category { font-family: var(--font-serif); font-weight: 400; font-size: 1.15rem; color: var(--ink); margin-bottom: 0.6rem; line-height: 1.3; }
+    .card-summary { font-size: 0.87rem; color: var(--muted); line-height: 1.65; flex: 1; margin-bottom: 1.25rem; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 1rem; border-top: 1px solid var(--border); }
     .card-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-
-    .card-tag {
-      font-size: 0.7rem;
-      padding: 0.2rem 0.6rem;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      color: var(--muted);
-      font-family: 'DM Sans', sans-serif;
-    }
-
-    .card-link {
-      font-size: 0.75rem;
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 500;
-      white-space: nowrap;
-    }
+    .card-tag { font-size: 0.7rem; padding: 0.2rem 0.6rem; border: 1px solid var(--border); border-radius: 20px; color: var(--muted); }
+    .card-link { font-size: 0.75rem; color: var(--accent); text-decoration: none; font-weight: 500; white-space: nowrap; }
     .card-link:hover { text-decoration: underline; }
 
-    /* Loading state */
+    /* Loading + paused/error states */
     .loading-state { text-align: center; padding: 5rem 2rem; }
     .dna-loader { display: flex; justify-content: center; gap: 5px; margin-bottom: 1.5rem; }
     .dna-loader span { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: dna 1.2s ease-in-out infinite; }
@@ -232,62 +83,34 @@
     .dna-loader span:nth-child(5) { animation-delay: 0.4s; }
     @keyframes dna { 0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; } 50% { transform: translateY(-10px) scale(1.2); opacity: 1; } }
     .loading-text { font-size: 0.88rem; color: var(--muted); font-style: italic; }
-
-    /* Error state */
     .error-state { text-align: center; padding: 5rem 2rem; }
-    .error-state h3 { font-family: 'DM Serif Display', serif; font-size: 1.8rem; margin-bottom: 0.75rem; }
+    .error-state h3 { font-family: var(--font-serif); font-weight: 400; font-size: 1.8rem; margin-bottom: 0.75rem; }
     .error-state p { font-size: 0.9rem; color: var(--muted); }
+    .error-state a { color: var(--accent); }
 
-    /* Footer — identical to index.html style */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 2rem 3rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.8rem;
-      color: var(--muted);
-      position: relative;
-      z-index: 1;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    footer a { color: var(--muted); text-decoration: none; }
-    footer a:hover { color: var(--accent); }
-
-    /* Responsive */
-    @media (max-width: 900px) {
-      header { padding: 1.5rem; }
-      main { padding: 2.5rem 1.25rem; }
-      .cards-grid { grid-template-columns: 1fr 1fr; }
-      footer { padding: 1.5rem; flex-direction: column; text-align: center; }
-    }
-
-    @media (max-width: 600px) {
-      .cards-grid { grid-template-columns: 1fr; }
-      nav { gap: 1rem; }
-    }
+    @media (max-width: 900px) { .cards-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { .cards-grid { grid-template-columns: 1fr; } }
   </style>
   <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "835baa76f907492a9ff87f734a9e47fe"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
 <body>
 
-<header>
-  <div style="display:flex; align-items:center; gap:0.5rem;">
-    <a href="/" class="logo" style="text-decoration:none; color:inherit;">Med<span>Sum</span>AI</a>
-    <div class="tagline" style="margin-bottom:0;">Daily Research Feed</div>
-  </div>
-  <nav class="topnav" style="display:flex; align-items:center; gap:1.5rem; margin-left:auto;">
-    <a href="/topics/" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Topics</a>
-    <a href="/compare" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Compare</a>
-    <a href="/methodology.html" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">How it works</a>
-    <a href="/#shop" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Study Guides</a>
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header class="site-header">
+  <a class="brand" href="/" aria-label="MedSumAI home">
+    <span class="logo">Med<span>Sum</span>AI</span>
+    <span class="tagline">Biomedical Research Summarizer</span>
+  </a>
+  <nav class="topnav" aria-label="Main">
+    <a href="/topics/">Topics</a>
+    <a class="nav-cta" href="/compare">Compare</a>
+    <a href="/methodology.html">How it works</a>
+    <a href="/#shop">Study Guides</a>
+    <button class="theme-toggle" id="themeToggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
   </nav>
 </header>
 
-<main>
+<main class="page-wrap wide" id="main">
   <div class="hero">
     <h1>Today in <em>Medicine</em></h1>
     <p>Daily AI-powered summaries across 10 medical categories, sourced from the latest PubMed research.</p>
@@ -310,9 +133,11 @@
   </div>
 </main>
 
-<footer>
-  <div>Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a> & GPT</div>
-  <div><a href="index.html">← Back to Research Tool</a></div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="/">Home</a><a href="/topics/">Topics</a><a href="/compare">Compare</a><a href="/methodology.html">How it works</a><a href="/privacy.html">Privacy</a><a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <p>Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed</a> &amp; OpenAI. For education only. Not medical advice.</p>
 </footer>
 
 <script>

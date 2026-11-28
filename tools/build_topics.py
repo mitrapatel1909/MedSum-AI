@@ -135,8 +135,12 @@ def pretty_date(d):
     return f'{names[int(m) - 1]} {int(day)}, {y}'
 
 
-THEME = "<script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}</script>"
-FONTS = '<link rel="preconnect" href="https://fonts.googleapis.com"/><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>'
+# Same font URL on every page of the site. /site.css and /site.js (tokens, header, footer, theme toggle) are shared too.
+FONTS = (
+    '<link rel="preconnect" href="https://fonts.googleapis.com"/>'
+    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>'
+    '<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>'
+)
 
 
 def head(title, desc, canonical, extra=''):
@@ -150,6 +154,7 @@ def head(title, desc, canonical, extra=''):
   <meta name="description" content="{esc(desc)}"/>
   <link rel="canonical" href="{esc(canonical)}"/>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <link rel="icon" href="/favicon.ico" sizes="32x32"/>
   <meta property="og:type" content="article"/>
   <meta property="og:title" content="{esc(title)}"/>
   <meta property="og:description" content="{esc(desc)}"/>
@@ -157,24 +162,44 @@ def head(title, desc, canonical, extra=''):
   <meta property="og:site_name" content="MedSumAI"/>
   <meta property="og:image" content="{SITE}/og-image.png"/>
   <meta name="twitter:card" content="summary_large_image"/>
-  {THEME}
   {FONTS}
+  <link rel="stylesheet" href="/site.css"/>
+  <script src="/site.js"></script>
   <link rel="stylesheet" href="/topics/topics.css"/>
 {extra}</head>'''
 
 
-def site_header():
-    return '''<a class="skip-link" href="#main">Skip to main content</a>
-<header class="site-header">
-  <a class="logo" href="/">Med<span>Sum</span>AI</a>
-  <nav aria-label="Main"><a href="/topics/">Topics</a><a href="/">Summarize something</a></nav>
-</header>'''
+def site_header(current=None):
+    """The header every page of the site shares. `current` marks the page's own nav link."""
+    def link(href, label, key, cls=''):
+        c = f' class="{cls}"' if cls else ''
+        cur = ' aria-current="page"' if current == key else ''
+        return f'    <a{c} href="{href}"{cur}>{label}</a>\n'
+    return (
+        '<a class="skip-link" href="#main">Skip to main content</a>\n'
+        '<header class="site-header">\n'
+        '  <a class="brand" href="/" aria-label="MedSumAI home">\n'
+        '    <span class="logo">Med<span>Sum</span>AI</span>\n'
+        '    <span class="tagline">Biomedical Research Summarizer</span>\n'
+        '  </a>\n'
+        '  <nav class="topnav" aria-label="Main">\n'
+        + link('/topics/', 'Topics', 'topics')
+        + link('/compare', 'Compare', 'compare', 'nav-cta')
+        + link('/methodology.html', 'How it works', 'how')
+        + link('/#shop', 'Study Guides', 'guides')
+        + '    <button class="theme-toggle" id="themeToggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">\U0001F319</button>\n'
+        '  </nav>\n'
+        '</header>'
+    )
 
 
 def site_footer():
     return '''<footer class="site-footer">
-  <p>MedSumAI is a free, student-built tool. Summaries are written by AI from PubMed abstracts and can contain mistakes. This is not medical advice; talk to a qualified clinician about your health.</p>
-  <p><a href="/">Home</a> · <a href="/topics/">All topics</a> · <a href="/privacy.html">Privacy</a></p>
+  <div class="footer-links">
+    <a href="/">Home</a><a href="/topics/">Topics</a><a href="/compare">Compare</a><a href="/methodology.html">How it works</a><a href="/privacy.html">Privacy</a><a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <p>Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed</a> &amp; OpenAI. For education only. Not medical advice.</p>
+  <p>Summaries are written by AI from PubMed abstracts and can contain mistakes. Talk to a qualified clinician about your health.</p>
 </footer>'''
 
 
@@ -201,20 +226,20 @@ def build_topic(t, all_topics):
                 {'@type': 'ListItem', 'position': 2, 'name': 'Topics', 'item': SITE + '/topics/'},
                 {'@type': 'ListItem', 'position': 3, 'name': t['title'], 'item': url}]},
         ]}, ensure_ascii=False).replace('</', '<\\/')
-    badges = [f'<span class="badge">{esc(t["category"])}</span>']
+    badges = [f'<span class="chip">{esc(t["category"])}</span>']
     if n:
-        badges.append(f'<span class="badge">{n} PubMed abstract{"s" if n != 1 else ""}</span>')
+        badges.append(f'<span class="chip">{n} PubMed abstract{"s" if n != 1 else ""}</span>')
     if note:
-        badges.append(f'<span class="badge strong">{esc(note)}</span>')
+        badges.append(f'<span class="chip chip-accent">{esc(note)}</span>')
     toc = ''.join(f'<li><a href="#{hid}">{esc(txt)}</a></li>' for hid, txt in headings)
     rel = ''.join(f'<a class="rel-card" href="/topics/{x["slug"]}.html"><span class="rel-cat">{esc(x["category"])}</span><span class="rel-title">{esc(x["title"])}</span></a>' for x in related)
     q = esc(t['query'])
     page = head(title, desc, url, f'  <script type="application/ld+json">{ld}</script>\n') + f'''
 <body>
-{site_header()}
-<main id="main" class="topic">
+{site_header('topics')}
+<main id="main" class="page-wrap topic">
   <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> <span>›</span> <a href="/topics/">Topics</a> <span>›</span> <span aria-current="page">{esc(t["title"])}</span></nav>
-  <p class="eyebrow">What the research says</p>
+  <span class="page-label">What the research says</span>
   <h1>{esc(t["title"])}</h1>
   <div class="badges">{"".join(badges)}</div>
   <p class="byline">AI summary of PubMed abstracts, written for {esc({"high_school": "high school", "undergrad": "college undergraduate", "premed": "pre-med"}.get(t.get("level", "undergrad"), "college undergraduate"))} readers. Generated {pretty_date(t["generated"])}. Research keeps changing: check the linked sources.</p>
@@ -228,7 +253,7 @@ def build_topic(t, all_topics):
     <form action="/" method="get" class="cta-form">
       <label class="sr-only" for="topic-q">Research topic or paper</label>
       <input id="topic-q" name="topic" type="text" value="{q}" maxlength="200"/>
-      <button type="submit">Summarize →</button>
+      <button type="submit" class="btn">Summarize →</button>
     </form>
   </section>
   <section aria-labelledby="rel-h"><h2 id="rel-h" class="small-h">More topics</h2><div class="rel-grid">{rel}</div></section>
@@ -293,10 +318,10 @@ def build_index(topics):
 </script>'''
     return head('Research topics explained in plain English | MedSumAI', desc, SITE + '/topics/', f'  <script type="application/ld+json">{ld}</script>\n') + f'''
 <body>
-{site_header()}
-<main id="main" class="topic">
+{site_header('topics')}
+<main id="main" class="page-wrap topic">
   <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> <span>›</span> <span aria-current="page">Topics</span></nav>
-  <p class="eyebrow">Browse</p>
+  <span class="page-label">Browse</span>
   <h1>Research topics, <em>explained.</em></h1>
   <p class="lead">Real studies from PubMed, summarized in plain English with the sources linked. Pick a topic, or <a href="/">summarize your own</a>.</p>
   <div class="search-row" role="search">
@@ -320,10 +345,19 @@ def build_index(topics):
 '''
 
 
+# Hand-written pages that are not generated from content/topics. Keep these here: the sitemap is rewritten on every build,
+# so anything not listed would silently disappear from it.
+STATIC_PAGES = [
+    (SITE + '/compare', '2026-11-24', 'monthly', '0.9'),
+    (SITE + '/methodology.html', '2026-11-24', 'yearly', '0.4'),
+    (SITE + '/privacy.html', '2026-11-24', 'yearly', '0.3'),
+]
+
+
 def build_sitemap(topics):
     urls = [(SITE + '/', '2026-11-19', 'weekly', '1.0'), (SITE + '/topics/', max(t['generated'] for t in topics), 'weekly', '0.8')]
     urls += [(f"{SITE}/topics/{t['slug']}.html", t['generated'], 'monthly', '0.7') for t in sorted(topics, key=lambda x: x['slug'])]
-    urls.append((SITE + '/privacy.html', '2026-11-18', 'yearly', '0.3'))
+    urls += STATIC_PAGES
     body = ''.join(f'  <url>\n    <loc>{u}</loc>\n    <lastmod>{d}</lastmod>\n    <changefreq>{c}</changefreq>\n    <priority>{p}</priority>\n  </url>\n' for u, d, c, p in urls)
     return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{body}</urlset>\n'
 

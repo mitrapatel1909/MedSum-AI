@@ -25,687 +25,309 @@
     "isPartOf": {"@type": "WebSite", "name": "MedSumAI", "url": "https://medsumai.com"}
   }
   </script>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/site.css"/>
+  <script src="/site.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #f5f2ec;
-      --ink: #1a1a18;
-      --accent: #2d6a4f;
-      --accent-light: #b7e4c7;
-      --muted: #6b6b63;
-      --card: #ffffff;
-      --border: #ddd9d0;
-      --error: #c0392b;
-    }
-    [data-theme="dark"] {
-      --bg: #0f1412;
-      --ink: #e8e4dc;
-      --accent: #4ade80;
-      --accent-light: #166534;
-      --muted: #8a9e92;
-      --card: #1a2420;
-      --border: #2a3830;
-      --error: #f87171;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--ink);
-      font-family: 'DM Sans', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    header {
-      padding: 2rem 3rem 1.25rem;
-      display: flex;
-      align-items: flex-end;
-      gap: 1rem;
-      border-bottom: 1px solid var(--border);
-      position: relative;
-      z-index: 1;
-    }
-
-    .logo { font-family: 'DM Serif Display', serif; font-size: 1.9rem; color: var(--ink); letter-spacing: -0.02em; text-decoration: none; }
-    .logo span { color: var(--accent); }
-    .tagline { font-size: 0.75rem; color: var(--muted); font-weight: 300; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.2rem; }
-    .header-right { margin-left: auto; display: flex; gap: 0.75rem; align-items: center; }
-
-    nav a {
-      font-size: 0.82rem;
-      color: var(--muted);
-      text-decoration: none;
-      padding: 0.35rem 0.7rem;
-      border-radius: 8px;
-      transition: color 0.15s;
-    }
-    nav a:hover, nav a.active { color: var(--accent); }
-
-    .theme-toggle {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      padding: 0.4rem 0.7rem;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      line-height: 1;
-    }
-    .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
-
-    main {
-      flex: 1;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 3rem 2rem 5rem;
-      width: 100%;
-      position: relative;
-      z-index: 5;
-    }
-
-    /* ── Page header ── */
-    .page-header { margin-bottom: 2.5rem; }
-    .page-label {
-      font-size: 0.7rem;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 0.6rem;
-    }
-    .page-header h1 {
-      font-family: 'DM Serif Display', serif;
-      font-size: clamp(1.6rem, 4vw, 2.4rem);
-      line-height: 1.2;
-      letter-spacing: -0.025em;
-      color: var(--ink);
-      margin-bottom: 0.6rem;
-    }
-    .page-header h1 em { font-style: italic; color: var(--accent); }
-    .page-header p { font-size: 0.95rem; color: var(--muted); line-height: 1.65; max-width: 560px; }
+    .page-wrap { max-width: 900px; }
+    .hidden { display: none !important; }
+    /* programmatic focus targets (moved to after a step changes) shouldn't draw a ring around a whole section */
+    #step2, #step3, #searchResultLabel, #errorBox { scroll-margin-top: 5.5rem; }
+    #step3:focus, #searchResultLabel:focus { outline: none !important; }
 
     /* ── Step indicator ── */
-    .steps {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      margin-bottom: 2.5rem;
-    }
-    .step-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex: 1;
-    }
-    .step-item:last-child { flex: 0; }
-    .step-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 1.5px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-family: 'DM Mono', monospace;
-      color: var(--muted);
-      flex-shrink: 0;
-      transition: all 0.3s;
-    }
-    .step-num.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
-    .step-num.done { border-color: var(--accent); background: var(--accent); color: white; }
-    .step-label { font-size: 0.78rem; color: var(--muted); font-weight: 400; transition: color 0.3s; white-space: nowrap; }
+    .steps { display: flex; align-items: center; list-style: none; margin-bottom: 2rem; }
+    .step-item { display: flex; align-items: center; gap: 0.5rem; flex: 1; }
+    .step-item:last-child { flex: 0 0 auto; }
+    .step-item:not(:last-child)::after { content: ''; flex: 1; height: 1px; background: var(--border); margin: 0 0.6rem; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-family: var(--font-mono); color: var(--muted); flex-shrink: 0; transition: all 0.3s; }
+    .step-num.active { border-color: var(--accent); color: var(--ink); background: var(--accent-light); }
+    .step-num.done { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+    .step-label { font-size: 0.8rem; color: var(--muted); white-space: nowrap; transition: color 0.3s; }
     .step-label.active { color: var(--ink); font-weight: 500; }
-    .step-connector { flex: 1; height: 1px; background: var(--border); margin: 0 0.5rem; }
 
-    /* ── Cards / boxes ── */
-    .box {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 2rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .box-label {
-      font-size: 0.7rem;
-      font-weight: 500;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 0.9rem;
-    }
-
-    /* ── Search form ── */
+    /* ── Search ── */
     .input-row { display: flex; gap: 0.75rem; }
-    input[type="text"] {
-      flex: 1;
-      padding: 0.85rem 1.2rem;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 1rem;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      background: var(--bg);
-      color: var(--ink);
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    input[type="text"]:focus { border-color: var(--accent); }
-    input[type="text"]::placeholder { color: #b0aca4; }
-
-    button {
-      padding: 0.85rem 1.8rem;
-      background: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-      white-space: nowrap;
-    }
-    button:hover { background: #235c42; }
-    button:active { transform: scale(0.98); }
-    button:disabled { background: #aaa; cursor: not-allowed; }
-
-    .btn-secondary {
-      background: transparent;
-      border: 1.5px solid var(--border);
-      color: var(--muted);
-      padding: 0.6rem 1.2rem;
-      font-size: 0.85rem;
-    }
-    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+    .input-row input { flex: 1; min-width: 0; padding: 0.85rem 1.2rem; font-family: inherit; font-size: 1rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--ink); transition: border-color 0.2s; }
+    .input-row input:focus { border-color: var(--accent); }
+    .input-row input::placeholder { color: var(--muted); opacity: 0.7; }
+    .pills-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.6rem; margin-top: 1rem; }
+    .pills-label { font-size: 0.8rem; color: var(--muted); }
+    .pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .pill { font-family: inherit; font-size: 0.78rem; padding: 0.3rem 0.8rem; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); background: transparent; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+    .pill:hover { border-color: var(--accent); color: var(--accent); }
+    .search-note { margin-top: 1.1rem; font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
+    #errorBox { margin-bottom: 1.5rem; }
 
     /* ── Paper list (step 2) ── */
-    .paper-list { display: flex; flex-direction: column; gap: 0.75rem; }
-
-    .paper-item {
-      display: flex;
-      gap: 1rem;
-      align-items: flex-start;
-      padding: 1rem 1.25rem;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-      user-select: none;
-    }
-    .paper-item:hover { border-color: var(--accent); background: #f8fdf9; }
-    [data-theme="dark"] .paper-item:hover { background: #1a2820; }
-    .paper-item.selected { border-color: var(--accent); background: #f0faf4; }
-    [data-theme="dark"] .paper-item.selected { background: #152018; }
-
-    .paper-check {
-      width: 20px;
-      height: 20px;
-      border: 1.5px solid var(--border);
-      border-radius: 5px;
-      flex-shrink: 0;
-      margin-top: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s;
-    }
-    .paper-item.selected .paper-check { border-color: var(--accent); background: var(--accent); }
-    .paper-check-tick { display: none; color: white; font-size: 12px; }
-    .paper-item.selected .paper-check-tick { display: block; }
-
+    .select-help { font-size: 0.88rem; color: var(--muted); line-height: 1.6; margin: -0.3rem 0 1.1rem; }
+    .paper-list { display: flex; flex-direction: column; gap: 0.7rem; }
+    .paper-item { position: relative; display: flex; gap: 0.9rem; align-items: flex-start; padding: 1rem 1.15rem; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--card); cursor: pointer; transition: border-color 0.15s, background 0.15s; user-select: none; }
+    .paper-item:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--card)); }
+    .paper-item.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--card)); }
+    .paper-item.nudge { animation: nudge 0.3s; }
+    @keyframes nudge { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+    .paper-check { width: 20px; height: 20px; border: 1.5px solid var(--border); border-radius: 5px; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: transparent; transition: all 0.15s; }
+    .paper-item.selected .paper-check { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+    .paper-cb:focus-visible + .paper-check { outline: 2px solid var(--accent); outline-offset: 2px; }
     .paper-info { flex: 1; min-width: 0; }
-    .paper-title { font-size: 0.9rem; font-weight: 500; color: var(--ink); margin-bottom: 0.3rem; line-height: 1.4; }
+    .paper-title { display: block; font-size: 0.92rem; font-weight: 500; color: var(--ink); margin-bottom: 0.35rem; line-height: 1.4; }
     .paper-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
-    .paper-year { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); }
-    .paper-type {
-      font-size: 0.7rem;
-      padding: 0.15rem 0.55rem;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-    .paper-type.rct, .paper-type.meta { border-color: var(--accent); color: var(--accent); }
-    .paper-snippet { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+    .paper-year { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+    .paper-journal { font-size: 0.75rem; color: var(--muted); max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .paper-snippet { font-size: 0.8rem; color: var(--muted); line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .paper-link { display: inline-block; margin-top: 0.4rem; font-size: 0.75rem; color: var(--accent); text-decoration: none; }
+    .paper-link:hover { text-decoration: underline; }
 
-    .selection-info {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 1.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    .selection-count { font-size: 0.85rem; color: var(--muted); }
-    .selection-count strong { color: var(--ink); }
+    .selection-bar { position: sticky; bottom: 0.75rem; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; flex-wrap: wrap; margin-top: 1.25rem; padding: 0.8rem 1rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 28px color-mix(in srgb, #000 12%, transparent); }
+    .selection-status { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; min-width: 0; }
+    .selection-hint { font-size: 0.84rem; color: var(--muted); }
+    .selection-hint.warn { color: var(--warn); font-weight: 500; }
+    .link-btn { background: none; border: 0; padding: 0; font: inherit; font-size: 0.8rem; color: var(--muted); text-decoration: underline; cursor: pointer; }
+    .link-btn:hover { color: var(--accent); }
+    .selection-actions { display: flex; gap: 0.6rem; }
 
     /* ── Loading ── */
-    .loading {
-      display: none;
-      text-align: center;
-      padding: 3rem 0;
-    }
-    .loading.visible { display: block; }
-
-    .dna-loader { display: flex; justify-content: center; gap: 5px; margin-bottom: 1.5rem; }
-    .dna-loader span { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: dna 1.2s ease-in-out infinite; }
-    .dna-loader span:nth-child(1) { animation-delay: 0s; }
-    .dna-loader span:nth-child(2) { animation-delay: 0.1s; }
-    .dna-loader span:nth-child(3) { animation-delay: 0.2s; }
-    .dna-loader span:nth-child(4) { animation-delay: 0.3s; }
-    .dna-loader span:nth-child(5) { animation-delay: 0.4s; }
-    @keyframes dna { 0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; } 50% { transform: translateY(-10px) scale(1.2); opacity: 1; } }
-
-    .loading-text { font-size: 0.9rem; color: var(--muted); font-style: italic; }
-
-    /* ── Error ── */
-    .error-box {
-      display: none;
-      background: #fff5f5;
-      border: 1px solid #fcc;
-      border-radius: 12px;
-      padding: 1rem 1.25rem;
-      font-size: 0.88rem;
-      color: var(--error);
-      margin-bottom: 1.5rem;
-    }
-    .error-box.visible { display: block; }
-    [data-theme="dark"] .error-box { background: #2a1515; border-color: #5a2525; }
+    .loading-text { font-size: 0.88rem; color: var(--muted); font-style: italic; margin-bottom: 1.1rem; }
+    .sk-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.2rem; margin-top: 1.25rem; }
 
     /* ── Results (step 3) ── */
     .result-section { animation: fadeUp 0.4s ease; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .card-flush { padding: 0; overflow: hidden; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem 1rem; flex-wrap: wrap; padding: 1.15rem 1.5rem; border-bottom: 1px solid var(--border); }
+    .card-head-plain { padding: 0 0 1rem; margin-bottom: 1.1rem; }
+    .section-title { font-family: var(--font-serif); font-weight: 400; font-size: 1.2rem; letter-spacing: -0.01em; color: var(--ink); display: flex; align-items: center; gap: 0.6rem; }
+    .section-title::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .design-note { margin: 1rem 1.5rem 0; }
+    .scroll-hint { margin: 0.8rem 1.5rem 0; font-size: 0.76rem; color: var(--muted); }
 
-    .section-heading {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      margin-bottom: 1.25rem;
-    }
-    .section-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-    .section-heading h2 {
-      font-family: 'DM Serif Display', serif;
-      font-size: 1.15rem;
-      color: var(--ink);
-      letter-spacing: -0.01em;
-    }
+    .table-wrapper { overflow: auto; max-height: min(78vh, 900px); margin-top: 1rem; border-top: 1px solid var(--border); }
+    .table-wrapper:focus-visible { outline-offset: -3px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }
+    thead th { position: sticky; top: 0; z-index: 2; min-width: 200px; padding: 0.8rem 1rem; text-align: left; vertical-align: bottom; background: var(--card); border-bottom: 1px solid var(--border); font-weight: 400; }
+    thead th:first-child { left: 0; z-index: 3; min-width: 120px; }
+    tbody th, tbody td { padding: 0.85rem 1rem; vertical-align: top; line-height: 1.5; border-bottom: 1px solid var(--border); text-align: left; }
+    tbody tr:last-child > * { border-bottom: 0; }
+    tbody th { position: sticky; left: 0; z-index: 1; background: var(--bg); border-right: 1px solid var(--border); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+    tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--bg) 55%, var(--card)); }
+    tbody tr.differs th { color: var(--warn); box-shadow: inset 3px 0 0 var(--warn); }
+    tbody tr.differs td { background: color-mix(in srgb, var(--warn) 7%, var(--card)); }
+    .differs-tag { display: block; margin-top: 0.25rem; font-size: 0.62rem; letter-spacing: 0.06em; color: var(--warn); }
+    .col-title { font-size: 0.82rem; font-weight: 600; color: var(--ink); line-height: 1.35; margin-bottom: 0.3rem; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+    .col-meta { font-size: 0.7rem; color: var(--muted); }
+    .col-link { display: inline-block; margin-top: 0.3rem; font-size: 0.75rem; color: var(--accent); text-decoration: none; }
+    .col-link:hover { text-decoration: underline; }
 
-    /* Comparison table */
-    .table-wrapper {
-      overflow-x: auto;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-
-    thead th {
-      background: var(--bg);
-      padding: 0.75rem 1rem;
-      text-align: left;
-      font-size: 0.72rem;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-
-    thead th:first-child { min-width: 110px; }
-    thead th:not(:first-child) { min-width: 180px; }
-
-    tbody tr:not(:last-child) { border-bottom: 1px solid var(--border); }
-
-    tbody td {
-      padding: 0.85rem 1rem;
-      vertical-align: top;
-      color: var(--ink);
-      line-height: 1.5;
+    /* phones: stacked cards instead of a table */
+    .comp-cards { display: none; padding: 1rem; flex-direction: column; gap: 0.9rem; border-top: 1px solid var(--border); margin-top: 1rem; }
+    .comp-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; background: var(--bg); }
+    .comp-card.differs-card .type-row dd { color: var(--warn); }
+    .comp-card h3 { font-size: 0.95rem; font-weight: 600; line-height: 1.35; margin-bottom: 0.25rem; }
+    .comp-card .col-meta { margin-bottom: 0.2rem; }
+    .comp-card dl { margin-top: 0.85rem; display: grid; gap: 0.75rem; }
+    .comp-card dt { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.15rem; }
+    .comp-card dd { font-size: 0.88rem; line-height: 1.55; }
+    @media (max-width: 640px) {
+      .table-wrapper, .scroll-hint { display: none !important; }
+      .comp-cards { display: flex; }
+      .card-head { padding: 1rem; }
+      .design-note { margin: 1rem 1rem 0; }
     }
 
-    tbody td:first-child {
-      font-size: 0.72rem;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-      white-space: nowrap;
-      background: var(--bg);
-      border-right: 1px solid var(--border);
-    }
-
-    tbody tr:nth-child(even) td:not(:first-child) { background: #fafaf8; }
-    [data-theme="dark"] tbody tr:nth-child(even) td:not(:first-child) { background: #161e1a; }
-
-    .paper-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.75rem;
-      color: var(--accent);
-      text-decoration: none;
-      margin-top: 0.3rem;
-    }
-    .paper-link:hover { text-decoration: underline; }
-
-    /* Type badge in table */
-    .type-badge {
-      font-size: 0.65rem;
-      padding: 0.1rem 0.5rem;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      display: inline-block;
-      margin-top: 0.2rem;
-    }
-    .type-badge.strong { border-color: var(--accent); color: var(--accent); }
-
-    /* Synthesis box */
-    .synthesis-box {
-      padding: 1.5rem;
-      background: #f0faf4;
-      border: 1px solid var(--accent-light);
-      border-radius: 14px;
-      font-size: 0.9rem;
-      line-height: 1.7;
-      color: var(--ink);
-      margin-bottom: 1rem;
-    }
-    [data-theme="dark"] .synthesis-box { background: #102018; border-color: #2a4830; }
-
-    .agree-disagree {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
+    .synthesis-text { padding: 1.25rem 1.4rem; background: color-mix(in srgb, var(--accent) 8%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); border-radius: var(--radius); font-size: 0.92rem; line-height: 1.7; color: var(--ink); margin-bottom: 1rem; }
+    .agree-disagree { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     @media (max-width: 600px) { .agree-disagree { grid-template-columns: 1fr; } }
-
-    .agree-box, .disagree-box {
-      padding: 1rem 1.25rem;
-      border-radius: 12px;
-      font-size: 0.85rem;
-    }
-    .agree-box { background: #f0faf4; border: 1px solid var(--accent-light); }
-    .disagree-box { background: #fff8f0; border: 1px solid #f5d6b0; }
-    [data-theme="dark"] .agree-box { background: #102018; border-color: #2a4830; }
-    [data-theme="dark"] .disagree-box { background: #1e1508; border-color: #3a2a10; }
-
-    .agree-box h3, .disagree-box h3 {
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 0.6rem;
-    }
+    .agree-box, .disagree-box { padding: 1rem 1.25rem; border-radius: var(--radius); font-size: 0.86rem; }
+    .agree-box { background: color-mix(in srgb, var(--accent) 8%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); }
+    .disagree-box { background: color-mix(in srgb, var(--warn) 8%, var(--card)); border: 1px solid color-mix(in srgb, var(--warn) 32%, var(--border)); }
+    .agree-box h3, .disagree-box h3 { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.6rem; }
     .agree-box h3 { color: var(--accent); }
-    .disagree-box h3 { color: #b06020; }
-    [data-theme="dark"] .disagree-box h3 { color: #d4973a; }
-
-    .agree-box ul, .disagree-box ul {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-    .agree-box li, .disagree-box li {
-      padding-left: 1.1rem;
-      position: relative;
-      color: var(--ink);
-      line-height: 1.5;
-    }
+    .disagree-box h3 { color: var(--warn); }
+    .agree-box ul, .disagree-box ul { list-style: none; display: flex; flex-direction: column; gap: 0.45rem; }
+    .agree-box li, .disagree-box li { padding-left: 1.1rem; position: relative; line-height: 1.5; }
     .agree-box li::before { content: '✓'; position: absolute; left: 0; color: var(--accent); font-size: 0.75rem; }
-    .disagree-box li::before { content: '≠'; position: absolute; left: 0; color: #b06020; font-size: 0.75rem; }
+    .disagree-box li::before { content: '≠'; position: absolute; left: 0; color: var(--warn); font-size: 0.75rem; }
 
-    /* Research gaps */
-    .gap-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-    .gap-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.75rem;
-      padding: 0.85rem 1rem;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 0.88rem;
-      line-height: 1.5;
-      color: var(--ink);
-    }
-    .gap-num {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.72rem;
-      color: var(--muted);
-      flex-shrink: 0;
-      min-width: 1.4rem;
-      padding-top: 0.1rem;
-    }
+    .gaps-intro { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
+    .gap-list { display: flex; flex-direction: column; gap: 0.6rem; }
+    .gap-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.85rem 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; font-size: 0.88rem; line-height: 1.5; color: var(--ink); }
+    .gap-num { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); flex-shrink: 0; min-width: 1.4rem; padding-top: 0.1rem; }
 
-    /* Actions bar */
-    .actions-bar {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 2rem;
-      flex-wrap: wrap;
-    }
+    .limits { margin-bottom: 1.5rem; }
+    .limits strong { color: var(--ink); }
+    .limits ul { margin: 0.4rem 0 0 1.1rem; }
+    .limits li { margin-bottom: 0.2rem; }
+    .actions-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 
-    /* Utility */
-    .hidden { display: none !important; }
-
-    .pills { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
-    .pill {
-      font-size: 0.78rem;
-      padding: 0.3rem 0.8rem;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      color: var(--muted);
-      cursor: pointer;
-      background: transparent;
-      font-family: 'DM Sans', sans-serif;
-      transition: all 0.15s;
-    }
-    .pill:hover { border-color: var(--accent); color: var(--accent); }
-
-    footer {
-      text-align: center;
-      padding: 2.5rem 2rem;
-      font-size: 0.78rem;
-      color: var(--muted);
-      border-top: 1px solid var(--border);
-      position: relative;
-      z-index: 1;
-    }
-    footer a { color: var(--muted); text-decoration: none; }
-    footer a:hover { color: var(--accent); }
-
-    @media (max-width: 600px) {
-      header { padding: 1.5rem 1.5rem 1rem; }
-      main { padding: 2rem 1.25rem 4rem; }
+    @media (max-width: 520px) {
+      .card:not(.card-flush) { padding: 1.1rem; }
+      .input-row { flex-direction: column; }
+      .input-row .btn { width: 100%; }
+      .step-label:not(.active) { display: none; }
+      .selection-bar { bottom: 0.5rem; }
+      .selection-actions { width: 100%; }
+      .selection-actions .btn { flex: 1; padding-left: 0.8rem; padding-right: 0.8rem; }
+      .actions-bar .btn { flex: 1 1 auto; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div style="display:flex; align-items:center; gap:0.5rem;">
-      <a href="/" class="logo" style="text-decoration:none; color:inherit;">Med<span>Sum</span>AI</a>
-      <div class="tagline" style="margin-bottom:0;">Research Comparison</div>
-    </div>
-    <nav class="topnav" style="display:flex; align-items:center; gap:1.5rem; margin-left:auto;">
-      <a href="/topics/" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Topics</a>
-      <a href="/compare" style="font-size:0.85rem; color:var(--accent); text-decoration:none; font-weight:500; white-space:nowrap;">Compare</a>
-      <a href="/methodology.html" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">How it works</a>
-      <a href="/#shop" style="font-size:0.85rem; color:var(--muted); text-decoration:none; font-weight:400; white-space:nowrap; transition:color 0.15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">Study Guides</a>
-      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="MedSumAI home">
+      <span class="logo">Med<span>Sum</span>AI</span>
+      <span class="tagline">Biomedical Research Summarizer</span>
+    </a>
+    <nav class="topnav" aria-label="Main">
+      <a href="/topics/">Topics</a>
+      <a class="nav-cta" href="/compare" aria-current="page">Compare</a>
+      <a href="/methodology.html">How it works</a>
+      <a href="/#shop">Study Guides</a>
+      <button class="theme-toggle" id="themeToggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
     </nav>
   </header>
 
-  <main>
-    <!-- Page heading -->
+  <main class="page-wrap" id="main">
     <div class="page-header">
-      <div class="page-label">New</div>
-      <h1>Compare <em>Research</em></h1>
-      <p>Search a topic, pick 2–5 papers, and get a structured comparison table with AI synthesis and research gap analysis.</p>
+      <span class="page-label">Evidence comparison</span>
+      <h1>Compare <em>research</em></h1>
+      <p>Search a topic, pick 2–5 papers, and see how their designs, populations and findings line up. Everything is based on PubMed abstracts.</p>
     </div>
 
-    <!-- Step indicator -->
-    <div class="steps" id="stepsBar">
-      <div class="step-item">
-        <div class="step-num active" id="snum1">1</div>
-        <div class="step-label active" id="slbl1">Search</div>
-        <div class="step-connector"></div>
-      </div>
-      <div class="step-item">
-        <div class="step-num" id="snum2">2</div>
-        <div class="step-label" id="slbl2">Select Papers</div>
-        <div class="step-connector"></div>
-      </div>
-      <div class="step-item">
-        <div class="step-num" id="snum3">3</div>
-        <div class="step-label" id="slbl3">Compare</div>
-      </div>
-    </div>
+    <ol class="steps" id="stepsBar" aria-label="Progress">
+      <li class="step-item" id="st1" aria-current="step"><span class="step-num active" id="snum1">1</span><span class="step-label active" id="slbl1">Search</span></li>
+      <li class="step-item" id="st2"><span class="step-num" id="snum2">2</span><span class="step-label" id="slbl2">Select papers</span></li>
+      <li class="step-item" id="st3"><span class="step-num" id="snum3">3</span><span class="step-label" id="slbl3">Compare</span></li>
+    </ol>
 
-    <!-- Error banner -->
-    <div class="error-box" id="errorBox"></div>
+    <div class="notice notice-error hidden" id="errorBox" role="alert"></div>
 
     <!-- ══ STEP 1: Search ══ -->
-    <div id="step1">
-      <div class="box">
-        <div class="box-label">Search PubMed</div>
+    <section id="step1" aria-labelledby="s1h">
+      <div class="card">
+        <h2 class="card-label" id="s1h">Search PubMed</h2>
         <div class="input-row">
+          <label class="sr-only" for="topicInput">Research topic</label>
           <input type="text" id="topicInput" placeholder="e.g. GLP-1 drugs and obesity" autocomplete="off" maxlength="200"/>
-          <button id="searchBtn" onclick="doSearch()">Search →</button>
+          <button class="btn" id="searchBtn" type="button">Search →</button>
         </div>
-        <div class="pills" id="examplePills"></div>
+        <div class="pills-row">
+          <span class="pills-label">Try:</span>
+          <div class="pills" id="examplePills"></div>
+        </div>
+        <p class="search-note">MedSumAI finds matching papers on PubMed, then you choose which ones to put side by side.</p>
       </div>
 
-      <div class="loading" id="searchLoading">
-        <div class="dna-loader">
-          <span></span><span></span><span></span><span></span><span></span>
-        </div>
-        <div class="loading-text">Searching PubMed…</div>
+      <div class="skeleton-card hidden" id="searchLoading" aria-hidden="true">
+        <div class="sk sk-title"></div>
+        <div class="sk sk-line"></div><div class="sk sk-line short"></div>
+        <div class="sk sk-line"></div><div class="sk sk-line short"></div>
       </div>
-    </div>
+      <p class="sr-only" id="searchStatus" role="status"></p>
+    </section>
 
-    <!-- ══ STEP 2: Select Papers ══ -->
-    <div id="step2" class="hidden">
-      <div class="box">
-        <div class="box-label" id="searchResultLabel">Papers found</div>
-        <div class="paper-list" id="paperList"></div>
-        <div class="selection-info">
-          <div class="selection-count" id="selectionCount">Select <strong>2–5</strong> papers to compare</div>
-          <div style="display:flex;gap:0.6rem;">
-            <button class="btn-secondary" onclick="goBack()">← New search</button>
-            <button id="compareBtn" disabled onclick="doCompare()">Compare →</button>
+    <!-- ══ STEP 2: Select papers ══ -->
+    <section id="step2" class="hidden" aria-labelledby="searchResultLabel">
+      <div class="card">
+        <h2 class="card-label" id="searchResultLabel" tabindex="-1">Papers found</h2>
+        <p class="select-help">Choose 2–5 papers. Mixing study designs is fine; the comparison will point it out.</p>
+        <div class="paper-list" id="paperList" role="group" aria-labelledby="searchResultLabel"></div>
+        <div class="selection-bar" id="selectionBar">
+          <div class="selection-status" aria-live="polite">
+            <span class="chip chip-accent" id="selCount">0 of 5 selected</span>
+            <span class="selection-hint" id="selHint">Pick at least 2</span>
+            <button class="link-btn hidden" id="clearBtn" type="button">Clear</button>
+          </div>
+          <div class="selection-actions">
+            <button class="btn btn-secondary" id="backBtn" type="button">← New search</button>
+            <button class="btn" id="compareBtn" type="button" disabled>Compare →</button>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- ══ Loading comparison ══ -->
-    <div class="loading" id="compareLoading">
-      <div class="dna-loader">
-        <span></span><span></span><span></span><span></span><span></span>
+    <!-- ══ Loading the comparison ══ -->
+    <div class="skeleton-card hidden" id="compareLoading" role="status">
+      <p class="sr-only">Comparing your selected papers…</p>
+      <p class="loading-text" id="compareLoadingText" aria-hidden="true">Fetching abstracts from PubMed…</p>
+      <div class="sk sk-title"></div>
+      <div class="sk-cols" aria-hidden="true">
+        <div><div class="sk sk-line"></div><div class="sk sk-line short"></div><div class="sk sk-line"></div></div>
+        <div><div class="sk sk-line"></div><div class="sk sk-line short"></div><div class="sk sk-line"></div></div>
+        <div><div class="sk sk-line"></div><div class="sk sk-line short"></div><div class="sk sk-line"></div></div>
       </div>
-      <div class="loading-text" id="compareLoadingText">Extracting and comparing papers…</div>
     </div>
 
     <!-- ══ STEP 3: Results ══ -->
-    <div id="step3" class="hidden result-section">
+    <section id="step3" class="hidden result-section" tabindex="-1" aria-labelledby="resultsH">
+      <h2 class="sr-only" id="resultsH">Comparison results</h2>
 
-      <!-- Comparison table -->
-      <div class="box" style="padding: 0; overflow: hidden;">
-        <div style="padding: 1.5rem 2rem 1.25rem; border-bottom: 1px solid var(--border);">
-          <div class="section-heading" style="margin-bottom: 0;">
-            <div class="section-dot"></div>
-            <h2>Paper-by-Paper Comparison</h2>
-          </div>
+      <div class="card card-flush">
+        <div class="card-head">
+          <h2 class="section-title">Paper-by-paper comparison</h2>
+          <span class="chip">Read from abstracts by AI</span>
         </div>
-        <div class="table-wrapper" style="border: none; border-radius: 0;">
+        <div class="notice notice-warn design-note hidden" id="designNote" role="note"></div>
+        <p class="scroll-hint hidden" id="scrollHint">Scroll sideways to see every paper →</p>
+        <div class="table-wrapper" id="tableWrap" tabindex="0" role="region" aria-label="Comparison table, scrollable">
           <table id="compTable"></table>
         </div>
+        <div class="comp-cards" id="compCards"></div>
       </div>
 
-      <!-- Synthesis -->
-      <div class="box">
-        <div class="section-heading">
-          <div class="section-dot"></div>
-          <h2>Synthesis</h2>
+      <div class="card">
+        <div class="card-head card-head-plain">
+          <h2 class="section-title">Synthesis</h2>
+          <span class="chip">AI interpretation</span>
         </div>
-        <div class="synthesis-box" id="synthesisSummary"></div>
+        <div class="synthesis-text" id="synthesisSummary"></div>
         <div class="agree-disagree" id="agreeDisagree"></div>
       </div>
 
-      <!-- Research Gaps -->
-      <div class="box">
-        <div class="section-heading">
-          <div class="section-dot"></div>
-          <h2>Potential Research Gaps</h2>
+      <div class="card">
+        <div class="card-head card-head-plain">
+          <h2 class="section-title">Potential research gaps</h2>
+          <span class="chip">AI suggestions</span>
         </div>
-        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;line-height:1.6;">
-          Questions that remain unanswered, underrepresented populations, and areas where further study is needed.
-        </p>
-        <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;font-style:italic;">
-          These are AI-generated suggestions based on the selected abstracts, not a comprehensive assessment of all published research.
-        </p>
+        <p class="gaps-intro">Questions that may remain open, populations that look underrepresented, and areas where more study could help. These are suggestions based only on the selected abstracts, not a review of all published research.</p>
         <div class="gap-list" id="gapList"></div>
       </div>
 
-      <!-- Action bar -->
-      <div class="actions-bar">
-        <button class="btn-secondary" onclick="goBack()">← New search</button>
-        <button class="btn-secondary" onclick="goToSelect()">Change selection</button>
-        <button class="btn-secondary" onclick="copyResults()">Copy summary</button>
+      <div class="notice limits" role="note">
+        <strong>What this comparison can’t tell you.</strong>
+        <ul>
+          <li>It reads abstracts only, so details that appear only in the full papers are missing.</li>
+          <li>Differences in design, population and outcome measures can explain why results disagree.</li>
+          <li>AI can misread or oversimplify a paper. Check the PubMed links before relying on a claim. Not medical advice.</li>
+        </ul>
       </div>
-    </div>
+
+      <div class="actions-bar">
+        <button class="btn btn-secondary" id="newSearchBtn" type="button">← New search</button>
+        <button class="btn btn-secondary" id="changeSelBtn" type="button">Change selection</button>
+        <button class="btn btn-secondary" id="copyBtn" type="button">Copy comparison</button>
+      </div>
+      <p class="sr-only" id="copyStatus" role="status"></p>
+    </section>
   </main>
 
-  <footer>
-    <p>
-      Based on PubMed abstracts only. Not medical advice. ·
-      <a href="/">Summarize a topic</a> ·
-      <a href="/methodology.html">Methodology</a> ·
-      <a href="/privacy.html">Privacy</a>
-    </p>
+  <footer class="site-footer">
+    <div class="footer-links">
+      <a href="/">Home</a><a href="/topics/">Topics</a><a href="/compare">Compare</a><a href="/methodology.html">How it works</a><a href="/privacy.html">Privacy</a><a href="https://github.com/mitrapatel1909/MedSum-AI" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <p>Powered by <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed</a> &amp; OpenAI. For education only. Not medical advice.</p>
   </footer>
 
   <script>
     const API = 'https://api.medsumai.com';
+    const MAX_PICKS = 5;
+    const PUBMED_URL = /^https:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/\d{1,9}\/?$/;
+    const $ = id => document.getElementById(id);
 
-    // ── Theme ──
-    const saved = localStorage.getItem('theme');
-    if (saved) document.documentElement.setAttribute('data-theme', saved);
-    function toggleTheme() {
-      const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', t);
-      localStorage.setItem('theme', t);
-      document.getElementById('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
-    }
-    if (saved === 'dark') document.getElementById('themeBtn').textContent = '☀️';
-
-    // ── Example pills ──
+    // ── Example topics ──
     const EXAMPLES = [
       'GLP-1 drugs and obesity',
       'mRNA vaccine immunogenicity',
@@ -713,122 +335,166 @@
       'CRISPR gene therapy sickle cell',
       'statins LDL cholesterol',
     ];
-    const pillsEl = document.getElementById('examplePills');
     EXAMPLES.forEach(ex => {
       const b = document.createElement('button');
+      b.type = 'button';
       b.className = 'pill';
       b.textContent = ex;
-      b.onclick = () => {
-        document.getElementById('topicInput').value = ex;
-        doSearch();
-      };
-      pillsEl.appendChild(b);
+      b.addEventListener('click', () => { $('topicInput').value = ex; doSearch(); });
+      $('examplePills').appendChild(b);
     });
 
     // ── State ──
     let currentPapers = [];
     let selectedPmids = new Set();
     let currentTopic = '';
+    let lastComparison = null;
+    let busy = false;
 
-    // ── Helpers ──
+    // ── Small helpers ──
+    function escHtml(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    // Only ever link to PubMed article pages; anything else renders as plain text with no link.
+    function pubmedHref(url) { return typeof url === 'string' && PUBMED_URL.test(url) ? url : ''; }
+    function pmidHref(pmid) { return /^\d{1,9}$/.test(String(pmid)) ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}/` : ''; }
+    function strongType(t) {
+      return ['Meta-analysis', 'Systematic review', 'Randomized controlled trial', 'Clinical trial'].includes(t);
+    }
+    // Steps swap content in place, so jumping to the new content is instant. A smooth scroll that is still running
+    // when the layout changes again can carry the page away from where it should end up.
+    function reveal(node) {
+      node.scrollIntoView({ behavior: 'instant', block: 'start' });
+      node.focus({ preventScroll: true });
+    }
+    function show(id) { $(id).classList.remove('hidden'); }
+    function hide(id) { $(id).classList.add('hidden'); }
+
     function setStep(n) {
       for (let i = 1; i <= 3; i++) {
-        const num = document.getElementById('snum' + i);
-        const lbl = document.getElementById('slbl' + i);
+        const num = $('snum' + i), lbl = $('slbl' + i), item = $('st' + i);
         num.className = 'step-num' + (i < n ? ' done' : i === n ? ' active' : '');
         lbl.className = 'step-label' + (i === n ? ' active' : '');
-        if (i < n) num.textContent = '✓';
-        else num.textContent = String(i);
+        num.textContent = i < n ? '✓' : String(i);
+        if (i === n) item.setAttribute('aria-current', 'step'); else item.removeAttribute('aria-current');
       }
     }
 
     function showError(msg) {
-      const el = document.getElementById('errorBox');
+      const el = $('errorBox');
       el.textContent = msg;
-      el.classList.add('visible');
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      el.classList.remove('hidden');
+      el.scrollIntoView({ behavior: 'instant', block: 'nearest' });
     }
-    function hideError() { document.getElementById('errorBox').classList.remove('visible'); }
+    function hideError() { $('errorBox').classList.add('hidden'); }
 
-    function strongType(t) {
-      return ['Meta-analysis', 'Systematic review', 'Randomized controlled trial', 'Clinical trial'].includes(t);
+    // One place that talks to the API and turns every failure into a sentence a student can act on.
+    async function api(path, body) {
+      let res;
+      try {
+        res = await fetch(API + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      } catch (e) {
+        throw new Error('Couldn’t reach MedSumAI. Check your connection and try again.');
+      }
+      let data = null;
+      try { data = await res.json(); } catch (e) { /* not JSON */ }
+      if (!res.ok) {
+        throw new Error((data && typeof data.error === 'string' && data.error)
+          || (res.status === 429 ? 'Too many requests. Wait a moment and try again.' : 'Something went wrong on our side. Please try again in a minute.'));
+      }
+      if (!data) throw new Error('The server sent back something unexpected. Please try again.');
+      return data;
     }
 
     // ── STEP 1: Search ──
-    document.getElementById('topicInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') doSearch();
-    });
+    $('topicInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+    $('searchBtn').addEventListener('click', doSearch);
+    const prefill = new URLSearchParams(location.search).get('topic');
+    if (prefill) $('topicInput').value = prefill.slice(0, 200);
 
     async function doSearch() {
-      const topic = document.getElementById('topicInput').value.trim();
-      if (!topic || topic.length < 3) { showError('Please enter a topic (at least 3 characters).'); return; }
+      if (busy) return;
+      const topic = $('topicInput').value.trim();
+      if (topic.length < 3) {
+        showError('Enter a topic of at least 3 characters, for example “GLP-1 drugs and obesity”.');
+        $('topicInput').focus();
+        return;
+      }
       hideError();
+      busy = true;
       currentTopic = topic;
       selectedPmids = new Set();
-
-      document.getElementById('searchBtn').disabled = true;
-      document.getElementById('searchLoading').classList.add('visible');
+      $('searchBtn').disabled = true;
+      show('searchLoading');
+      $('searchStatus').textContent = 'Searching PubMed…';
 
       try {
-        const res = await fetch(`${API}/compare/search`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ topic }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Search failed.');
-        if (!data.papers || !data.papers.length) {
-          showError(data.message || 'No PubMed abstracts found. Try a different topic.');
+        const data = await api('/compare/search', { topic });
+        if (!Array.isArray(data.papers) || !data.papers.length) {
+          showError(data.message || 'No PubMed abstracts found for that topic. Try a broader term, a common name instead of a brand name, or check the spelling.');
           return;
         }
         currentPapers = data.papers;
         renderPaperList();
-        document.getElementById('step1').classList.add('hidden');
-        document.getElementById('step2').classList.remove('hidden');
+        hide('step1');
+        show('step2');
         setStep(2);
+        reveal($('searchResultLabel'));
       } catch (e) {
-        showError(e.message || 'Something went wrong. Please try again.');
+        showError(e.message);
       } finally {
-        document.getElementById('searchBtn').disabled = false;
-        document.getElementById('searchLoading').classList.remove('visible');
+        busy = false;
+        $('searchBtn').disabled = false;
+        hide('searchLoading');
+        $('searchStatus').textContent = '';
       }
     }
 
+    // ── STEP 2: Pick papers ──
     function renderPaperList() {
-      const list = document.getElementById('paperList');
+      const list = $('paperList');
       list.innerHTML = '';
-      document.getElementById('searchResultLabel').textContent =
-        `${currentPapers.length} papers found for "${currentTopic}"`;
+      $('searchResultLabel').textContent = `${currentPapers.length} papers found for “${currentTopic}”`;
 
       currentPapers.forEach(p => {
-        const item = document.createElement('div');
-        item.className = 'paper-item' + (selectedPmids.has(p.pmid) ? ' selected' : '');
-        item.dataset.pmid = p.pmid;
+        const pmid = String(p.pmid);
+        const href = pmidHref(pmid);
+        const item = document.createElement('label');
+        item.className = 'paper-item' + (selectedPmids.has(pmid) ? ' selected' : '');
         item.innerHTML = `
-          <div class="paper-check"><span class="paper-check-tick">✓</span></div>
-          <div class="paper-info">
-            <div class="paper-title">${escHtml(p.title)}</div>
-            <div class="paper-meta">
+          <input type="checkbox" class="paper-cb sr-only" value="${escHtml(pmid)}"${selectedPmids.has(pmid) ? ' checked' : ''}>
+          <span class="paper-check" aria-hidden="true">✓</span>
+          <span class="paper-info">
+            <span class="paper-title">${escHtml(p.title)}</span>
+            <span class="paper-meta">
               <span class="paper-year">${escHtml(p.year || '—')}</span>
-              <span class="paper-type${strongType(p.studyType) ? ' rct' : ''}">${escHtml(p.studyType)}</span>
-              <span class="paper-year" style="opacity:0.7;">${escHtml(p.journal.slice(0, 40))}</span>
-            </div>
-            <div class="paper-snippet">${escHtml(p.snippet)}</div>
-          </div>`;
-        item.addEventListener('click', () => togglePaper(p.pmid, item));
+              ${p.studyType ? `<span class="chip${strongType(p.studyType) ? ' chip-accent' : ''}">${escHtml(p.studyType)}</span>` : ''}
+              ${p.journal ? `<span class="paper-journal" title="${escHtml(p.journal)}">${escHtml(p.journal)}</span>` : ''}
+            </span>
+            ${p.snippet ? `<span class="paper-snippet">${escHtml(p.snippet)}</span>` : ''}
+            ${href ? `<a class="paper-link" href="${href}" target="_blank" rel="noopener">View on PubMed ↗</a>` : ''}
+          </span>`;
+        const cb = item.querySelector('input');
+        cb.addEventListener('change', () => onPick(cb, item, pmid));
         list.appendChild(item);
       });
       updateSelectionUI();
     }
 
-    function togglePaper(pmid, el) {
-      if (selectedPmids.has(pmid)) {
-        selectedPmids.delete(pmid);
-        el.classList.remove('selected');
-      } else {
-        if (selectedPmids.size >= 5) { showError('You can select up to 5 papers.'); return; }
+    function onPick(cb, item, pmid) {
+      if (cb.checked) {
+        if (selectedPmids.size >= MAX_PICKS) {
+          cb.checked = false;
+          item.classList.remove('nudge'); void item.offsetWidth; item.classList.add('nudge');
+          $('selHint').textContent = `You can compare up to ${MAX_PICKS} papers. Uncheck one to pick another.`;
+          $('selHint').classList.add('warn');
+          return;
+        }
         selectedPmids.add(pmid);
-        el.classList.add('selected');
+        item.classList.add('selected');
+      } else {
+        selectedPmids.delete(pmid);
+        item.classList.remove('selected');
       }
       hideError();
       updateSelectionUI();
@@ -836,82 +502,93 @@
 
     function updateSelectionUI() {
       const n = selectedPmids.size;
-      const info = document.getElementById('selectionCount');
-      const btn = document.getElementById('compareBtn');
-      if (n === 0) info.innerHTML = 'Select <strong>2–5</strong> papers to compare';
-      else if (n === 1) info.innerHTML = '<strong>1</strong> selected — pick at least 1 more';
-      else if (n <= 5) info.innerHTML = `<strong>${n}</strong> selected — ready to compare`;
-      btn.disabled = n < 2;
+      $('selCount').textContent = `${n} of ${MAX_PICKS} selected`;
+      $('selHint').classList.remove('warn');
+      $('selHint').textContent = n === 0 ? 'Pick at least 2'
+        : n === 1 ? 'Pick at least 1 more'
+        : n === MAX_PICKS ? 'Maximum reached. Ready to compare'
+        : 'Ready to compare';
+      $('compareBtn').disabled = n < 2;
+      $('clearBtn').classList.toggle('hidden', n === 0);
     }
+
+    $('clearBtn').addEventListener('click', () => {
+      selectedPmids.clear();
+      document.querySelectorAll('.paper-item').forEach(it => { it.classList.remove('selected'); it.querySelector('input').checked = false; });
+      hideError();
+      updateSelectionUI();
+    });
 
     function goBack() {
       hideError();
-      document.getElementById('step2').classList.add('hidden');
-      document.getElementById('step3').classList.add('hidden');
-      document.getElementById('compareLoading').classList.remove('visible');
-      document.getElementById('step1').classList.remove('hidden');
+      hide('step2'); hide('step3'); hide('compareLoading');
+      show('step1');
       setStep(1);
+      $('topicInput').focus();
     }
-
     function goToSelect() {
       hideError();
-      document.getElementById('step3').classList.add('hidden');
-      document.getElementById('step2').classList.remove('hidden');
+      hide('step3');
+      show('step2');
       setStep(2);
+      reveal($('searchResultLabel'));
     }
+    $('backBtn').addEventListener('click', goBack);
+    $('newSearchBtn').addEventListener('click', goBack);
+    $('changeSelBtn').addEventListener('click', goToSelect);
 
     // ── STEP 2→3: Compare ──
+    $('compareBtn').addEventListener('click', doCompare);
     async function doCompare() {
-      if (selectedPmids.size < 2) return;
+      if (busy || selectedPmids.size < 2) return;
+      busy = true;
       hideError();
+      const pmids = [...selectedPmids];
 
-      document.getElementById('step2').classList.add('hidden');
-      document.getElementById('step3').classList.add('hidden');
-      document.getElementById('compareLoading').classList.add('visible');
-      document.getElementById('compareBtn').disabled = true;
+      hide('step2'); hide('step3');
+      show('compareLoading');
       setStep(3);
 
       const loadingMsgs = [
         'Fetching abstracts from PubMed…',
-        'Extracting study design and population…',
+        'Reading study design and population…',
         'Building the comparison table…',
-        'Identifying research gaps…',
+        'Looking for gaps…',
       ];
       let msgIdx = 0;
-      const msgEl = document.getElementById('compareLoadingText');
+      $('compareLoadingText').textContent = loadingMsgs[0];
       const msgTimer = setInterval(() => {
         msgIdx = (msgIdx + 1) % loadingMsgs.length;
-        msgEl.textContent = loadingMsgs[msgIdx];
+        $('compareLoadingText').textContent = loadingMsgs[msgIdx];
       }, 2500);
 
       try {
-        const res = await fetch(`${API}/compare`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pmids: [...selectedPmids] }),
-        });
-        const data = await res.json();
-        clearInterval(msgTimer);
-        if (!res.ok) throw new Error(data.error || 'Comparison failed.');
-        renderResults(data.comparison);
-        document.getElementById('step3').classList.remove('hidden');
+        const data = await api('/compare', { pmids });
+        const cmp = data.comparison;
+        if (!cmp || !Array.isArray(cmp.papers) || !cmp.papers.length) {
+          throw new Error('The comparison came back empty. Try again, or pick different papers.');
+        }
+        lastComparison = cmp;
+        renderResults(cmp);
+        // Hide the skeleton before scrolling: the scroll target is measured when reveal() runs, and removing
+        // the skeleton afterwards shifts the layout and overshoots the results by its height.
+        hide('compareLoading');
+        show('step3');
+        updateScrollHint();
+        reveal($('step3'));
       } catch (e) {
-        clearInterval(msgTimer);
-        showError(e.message || 'Something went wrong. Please try again.');
-        document.getElementById('step2').classList.remove('hidden');
-        document.getElementById('compareBtn').disabled = false;
+        hide('compareLoading');
+        show('step2');
         setStep(2);
+        showError(e.message);
       } finally {
-        document.getElementById('compareLoading').classList.remove('visible');
+        clearInterval(msgTimer);
+        busy = false;
+        hide('compareLoading');
       }
     }
 
-    function renderResults(cmp) {
-      renderTable(cmp.papers);
-      renderSynthesis(cmp.synthesis);
-      renderGaps(cmp.research_gaps);
-    }
-
+    // ── Results ──
     const ROWS = [
       { key: 'study_type', label: 'Study type' },
       { key: 'population', label: 'Population' },
@@ -919,49 +596,87 @@
       { key: 'main_finding', label: 'Key finding' },
       { key: 'limitations', label: 'Limitations' },
     ];
+    function field(p, key) {
+      const v = p.extraction ? p.extraction[key] : p[key];
+      return v ? String(v) : '';
+    }
+    function designName(v) {
+      const t = String(v || '').toLowerCase().replace(/[^a-z ]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (t === 'rct' || t === 'randomised controlled trial') return 'randomized controlled trial';
+      return t;
+    }
+    // Different designs answer different questions, so say so out loud instead of leaving it to the reader to notice.
+    function designsDiffer(papers) {
+      const names = new Set(papers.map(p => designName(field(p, 'study_type'))).filter(Boolean));
+      return names.size > 1;
+    }
 
-    function renderTable(papers) {
-      const tbl = document.getElementById('compTable');
+    function renderResults(cmp) {
+      const differs = designsDiffer(cmp.papers);
+      renderTable(cmp.papers, differs);
+      renderCards(cmp.papers, differs);
+      renderDesignNote(cmp.papers, differs);
+      renderSynthesis(cmp.synthesis || {});
+      renderGaps(cmp.research_gaps);
+    }
+
+    function renderDesignNote(papers, differs) {
+      const note = $('designNote');
+      if (!differs) { note.classList.add('hidden'); note.textContent = ''; return; }
+      const seen = [];
+      papers.forEach(p => { const t = field(p, 'study_type'); if (t && !seen.includes(t)) seen.push(t); });
+      note.textContent = `These papers use different study designs (${seen.join(', ')}). A randomized trial and an observational study answer different questions, so read their findings with that in mind.`;
+      note.classList.remove('hidden');
+    }
+
+    function renderTable(papers, differs) {
+      const tbl = $('compTable');
       tbl.innerHTML = '';
 
-      // Header row
       const thead = document.createElement('thead');
       const hr = document.createElement('tr');
       const th0 = document.createElement('th');
-      th0.textContent = '';
+      th0.scope = 'col';
+      th0.innerHTML = '<span class="sr-only">Detail</span>';
       hr.appendChild(th0);
       papers.forEach(p => {
         const th = document.createElement('th');
+        th.scope = 'col';
+        const href = pubmedHref(p.url);
         th.innerHTML = `
-          <div style="font-size:0.8rem;font-weight:600;color:var(--ink);letter-spacing:0;text-transform:none;margin-bottom:0.3rem;line-height:1.3;">
-            ${escHtml((p.title || '').slice(0, 80))}${(p.title || '').length > 80 ? '…' : ''}
-          </div>
-          <div style="font-size:0.68rem;color:var(--muted);font-weight:400;letter-spacing:0;text-transform:none;">
-            ${escHtml(p.year || '')}${p.year && p.journal ? ' · ' : ''}${escHtml((p.journal || '').slice(0, 40))}
-          </div>
-          ${p.url ? `<a href="${escHtml(p.url)}" target="_blank" rel="noopener" class="paper-link">PubMed ↗</a>` : ''}`;
+          <div class="col-title" title="${escHtml(p.title || '')}">${escHtml(p.title || 'Untitled paper')}</div>
+          <div class="col-meta">${escHtml(p.year || '')}${p.year && p.journal ? ' · ' : ''}${escHtml((p.journal || '').slice(0, 60))}</div>
+          ${href ? `<a href="${href}" target="_blank" rel="noopener" class="col-link">PubMed ↗</a>` : ''}`;
         hr.appendChild(th);
       });
       thead.appendChild(hr);
       tbl.appendChild(thead);
 
-      // Data rows
       const tbody = document.createElement('tbody');
       ROWS.forEach(({ key, label }) => {
         const tr = document.createElement('tr');
-        const td0 = document.createElement('td');
-        td0.textContent = label;
-        tr.appendChild(td0);
+        const rowDiffers = differs && key === 'study_type';
+        if (rowDiffers) tr.className = 'differs';
+        const th = document.createElement('th');
+        th.scope = 'row';
+        th.textContent = label;
+        if (rowDiffers) {
+          const tag = document.createElement('span');
+          tag.className = 'differs-tag';
+          tag.textContent = 'Designs differ';
+          th.appendChild(tag);
+        }
+        tr.appendChild(th);
         papers.forEach(p => {
           const td = document.createElement('td');
-          td.innerHTML = escHtml(String(p.extraction ? (p.extraction[key] || '—') : (p[key] || '—')));
-          if (key === 'study_type') {
-            const val = p.extraction ? p.extraction[key] : p[key];
-            const badge = document.createElement('span');
-            badge.className = 'type-badge' + (strongType(val || '') ? ' strong' : '');
-            badge.textContent = val || '—';
-            td.textContent = '';
-            td.appendChild(badge);
+          const val = field(p, key);
+          if (key === 'study_type' && val) {
+            const chip = document.createElement('span');
+            chip.className = 'chip' + (strongType(val) ? ' chip-accent' : '');
+            chip.textContent = val;
+            td.appendChild(chip);
+          } else {
+            td.textContent = val || '—';
           }
           tr.appendChild(td);
         });
@@ -970,50 +685,125 @@
       tbl.appendChild(tbody);
     }
 
+    // Phones get one card per paper (a 5-column table is unreadable at 390px).
+    function renderCards(papers, differs) {
+      const wrap = $('compCards');
+      wrap.innerHTML = '';
+      papers.forEach(p => {
+        const card = document.createElement('article');
+        card.className = 'comp-card' + (differs ? ' differs-card' : '');
+        const href = pubmedHref(p.url);
+        const dl = ROWS.map(({ key, label }) =>
+          `<div class="${key === 'study_type' ? 'type-row' : ''}"><dt>${label}</dt><dd>${escHtml(field(p, key) || '—')}</dd></div>`).join('');
+        card.innerHTML = `
+          <h3>${escHtml(p.title || 'Untitled paper')}</h3>
+          <div class="col-meta">${escHtml(p.year || '')}${p.year && p.journal ? ' · ' : ''}${escHtml((p.journal || '').slice(0, 60))}</div>
+          ${href ? `<a href="${href}" target="_blank" rel="noopener" class="col-link">PubMed ↗</a>` : ''}
+          <dl>${dl}</dl>`;
+        wrap.appendChild(card);
+      });
+    }
+
     function renderSynthesis(syn) {
-      document.getElementById('synthesisSummary').textContent = syn.summary || '';
+      $('synthesisSummary').textContent = syn.summary || 'No overall synthesis was returned for these papers.';
 
-      const ad = document.getElementById('agreeDisagree');
+      const ad = $('agreeDisagree');
       ad.innerHTML = '';
-
-      const agreements = syn.agreements || [];
-      const disagreements = syn.disagreements || [];
-
-      if (agreements.length) {
+      const block = (cls, title, items) => {
         const div = document.createElement('div');
-        div.className = 'agree-box';
-        div.innerHTML = `<h3>Where studies agree</h3><ul>${agreements.map(a => `<li>${escHtml(a)}</li>`).join('')}</ul>`;
+        div.className = cls;
+        const h = document.createElement('h3');
+        h.textContent = title;
+        const ul = document.createElement('ul');
+        items.forEach(t => { const li = document.createElement('li'); li.textContent = String(t); ul.appendChild(li); });
+        div.append(h, ul);
         ad.appendChild(div);
-      }
-      if (disagreements.length) {
-        const div = document.createElement('div');
-        div.className = 'disagree-box';
-        div.innerHTML = `<h3>Where studies differ</h3><ul>${disagreements.map(d => `<li>${escHtml(d)}</li>`).join('')}</ul>`;
-        ad.appendChild(div);
-      }
+      };
+      const agreements = Array.isArray(syn.agreements) ? syn.agreements : [];
+      const disagreements = Array.isArray(syn.disagreements) ? syn.disagreements : [];
+      if (agreements.length) block('agree-box', 'Where studies agree', agreements);
+      if (disagreements.length) block('disagree-box', 'Where studies differ', disagreements);
     }
 
     function renderGaps(gaps) {
-      const list = document.getElementById('gapList');
+      const list = $('gapList');
       list.innerHTML = '';
-      (gaps || []).forEach((g, i) => {
+      const items = Array.isArray(gaps) ? gaps : [];
+      if (!items.length) {
+        const p = document.createElement('p');
+        p.className = 'gaps-intro';
+        p.textContent = 'No research gaps were suggested for these papers.';
+        list.appendChild(p);
+        return;
+      }
+      items.forEach((g, i) => {
         const div = document.createElement('div');
         div.className = 'gap-item';
-        div.innerHTML = `<span class="gap-num">G${i + 1}</span><span>${escHtml(g)}</span>`;
+        const num = document.createElement('span');
+        num.className = 'gap-num';
+        num.textContent = 'G' + (i + 1);
+        const txt = document.createElement('span');
+        txt.textContent = String(g);
+        div.append(num, txt);
         list.appendChild(div);
       });
     }
 
-    function copyResults() {
-      const summary = document.getElementById('synthesisSummary').textContent;
-      const gaps = [...document.querySelectorAll('.gap-item span:last-child')].map(el => el.textContent);
-      const text = `Synthesis\n${summary}\n\nPotential Research Gaps\n${gaps.map((g, i) => `${i + 1}. ${g}`).join('\n')}\n\nGenerated by MedSumAI · medsumai.com`;
-      navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
+    // "Scroll sideways" hint, only when the table really is wider than its box (desktop).
+    function updateScrollHint() {
+      const w = $('tableWrap');
+      const wide = w.offsetParent !== null && w.scrollWidth > w.clientWidth + 2 && w.scrollLeft < 24;
+      $('scrollHint').classList.toggle('hidden', !wide);
+    }
+    window.addEventListener('resize', updateScrollHint);
+    $('tableWrap').addEventListener('scroll', updateScrollHint, { passive: true });
+
+    // ── Copy ──
+    function comparisonText() {
+      const c = lastComparison;
+      if (!c) return '';
+      const lines = [`Comparison: ${currentTopic}`, `${c.papers.length} papers, read from PubMed abstracts`, ''];
+      c.papers.forEach((p, i) => {
+        lines.push(`${i + 1}. ${p.title || 'Untitled paper'}${p.year || p.journal ? ` (${[p.year, p.journal].filter(Boolean).join(', ')})` : ''}`);
+        if (pubmedHref(p.url)) lines.push(`   ${p.url}`);
+        ROWS.forEach(({ key, label }) => lines.push(`   ${label}: ${field(p, key) || '—'}`));
+        lines.push('');
+      });
+      const s = c.synthesis || {};
+      const list = v => (Array.isArray(v) ? v : []);
+      lines.push('Synthesis (AI interpretation)', s.summary || '—', '');
+      if (list(s.agreements).length) lines.push('Where studies agree', ...list(s.agreements).map(a => `- ${a}`), '');
+      if (list(s.disagreements).length) lines.push('Where studies differ', ...list(s.disagreements).map(d => `- ${d}`), '');
+      if (list(c.research_gaps).length) lines.push('Potential research gaps (AI suggestions)', ...list(c.research_gaps).map((g, i) => `${i + 1}. ${g}`), '');
+      lines.push('Generated by MedSumAI · medsumai.com. Based on PubMed abstracts only. Not medical advice.');
+      return lines.join('\n');
     }
 
-    function escHtml(s) {
-      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    async function writeClipboard(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+      } catch (e) { /* fall through to the textarea route */ }
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      ta.remove();
+      return ok;
     }
+
+    let copyTimer = null;
+    $('copyBtn').addEventListener('click', async () => {
+      const btn = $('copyBtn');
+      const ok = await writeClipboard(comparisonText());
+      btn.textContent = ok ? 'Copied ✓' : 'Copy failed';
+      $('copyStatus').textContent = ok ? 'Comparison copied to clipboard.' : 'Copy failed.';
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(() => { btn.textContent = 'Copy comparison'; $('copyStatus').textContent = ''; }, 2200);
+    });
   </script>
 </body>
 </html>

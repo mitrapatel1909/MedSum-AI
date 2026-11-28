@@ -66,14 +66,23 @@ sitemap = open(os.path.join(ROOT, 'sitemap.xml'), encoding='utf-8').read()
 for p in built:
     name = os.path.basename(p)
     h = open(p, encoding='utf-8').read()
-    ext = set(re.findall(r'href="(https?://[^"]+)"', h)) - {'https://fonts.googleapis.com', 'https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap'}
+    # The page body (everything inside <main>) may only link to PubMed articles or to this site. The shared header/footer
+    # have their own fixed links (PubMed home, GitHub), which are checked separately below.
+    main_html = re.search(r'<main.*?</main>', h, re.S).group(0)
+    ext = set(re.findall(r'href="(https?://[^"]+)"', main_html))
     bad = [u for u in ext if not (bt.PUBMED.match(u) or u.startswith('https://medsumai.com/'))]
     check(f'{name}: one h1, canonical, only PubMed/own links, in sitemap, no leftover markdown', h.count('<h1>') == 1 and 'rel="canonical"' in h and not bad and f'/topics/{name}' in sitemap and '](' not in re.sub(r'<script.*?</script>', '', h, flags=re.S) and '## ' not in h, str(bad))
     check(f'{name}: has all four summary sections and a Sources list', all(f'id="{i}"' in h for i in ('in-plain-english', 'key-findings', 'how-strong-is-the-evidence', 'limitations-and-caveats', 'sources')))
     check(f'{name}: every claim cites a PubMed link', len(re.findall(r'href="https://pubmed\.ncbi\.nlm\.nih\.gov/\d+/"', h)) >= 4)
+    check(f'{name}: shared design system (site.css + site.js, shared header with Topics marked current, shared footer, one theme toggle)',
+          '<link rel="stylesheet" href="/site.css"/>' in h and '<script src="/site.js"></script>' in h
+          and h.count('class="site-header"') == 1 and 'href="/topics/" aria-current="page"' in h and 'class="nav-cta" href="/compare"' in h
+          and h.count('class="theme-toggle"') == 1 and h.count('class="site-footer"') == 1 and 'Not medical advice' in h
+          and "localStorage.getItem('theme')" not in h)
 
 idx = open(os.path.join(ROOT, 'topics', 'index.html'), encoding='utf-8').read()
 cards = re.findall(r'<a class="topic-card"[^>]*>', idx)
+check('index: shared header (Topics marked current) and footer', idx.count('class="site-header"') == 1 and 'href="/topics/" aria-current="page"' in idx and idx.count('class="site-footer"') == 1 and '<script src="/site.js"></script>' in idx)
 check('index: search box, empty state and one searchable card per topic', 'id="topic-search"' in idx and 'id="no-results"' in idx and len(cards) == len(built) and all('data-search="' in c for c in cards), f'{len(cards)} cards vs {len(built)} pages')
 
 fails = [r for r in results if not r[1]]
