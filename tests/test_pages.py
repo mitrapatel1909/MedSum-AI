@@ -89,6 +89,8 @@ def answer_search(r, mode):
         return r.fulfill(status=200, headers=JSON_H, body=json.dumps({'papers': [], 'message': 'No PubMed abstracts matched. Try a broader term.'}))
     if mode == 'empty-nomsg':
         return r.fulfill(status=200, headers=JSON_H, body=json.dumps({'papers': []}))
+    if mode == 'oddpmid':
+        return r.fulfill(status=200, headers=JSON_H, body=json.dumps({'papers': [PAPERS[0], {**PAPERS[2], 'pmid': '12x', 'snippet': ''}]}))
     return r.fulfill(status=200, headers=JSON_H, body=json.dumps({'papers': PAPERS}))
 
 
@@ -245,6 +247,7 @@ PAGE_FACTS_JS = r"""() => {
     current: [...document.querySelectorAll('.topnav a[aria-current="page"]')].map(a => a.getAttribute('href')),
     footerLinks: [...document.querySelectorAll('.site-footer .footer-links a')].map(a => a.getAttribute('href')),
     overflow: document.documentElement.scrollWidth - window.innerWidth,
+    nested: document.querySelectorAll('label a, label button, label select, label textarea, label label, a a, a button, button a, button button').length,
   };
 }"""
 
@@ -262,6 +265,21 @@ def new_context(browser, width, height, theme=None, extra_init=None):
 def watch(page, errors):
     page.on('pageerror', lambda e: errors.append('pageerror: ' + str(e)))
     page.on('console', lambda m: errors.append('console.error: ' + m.text) if m.type == 'error' and 'Failed to load resource' not in m.text else None)
+
+
+def ax_name_desc(page, selector):
+    """The accessible name and description Chrome computes for the first checkbox matching the selector."""
+    cdp = page.context.new_cdp_session(page)
+    try:
+        cdp.send('DOM.enable')
+        cdp.send('Accessibility.enable')
+        root = cdp.send('DOM.getDocument', {'depth': 0})['root']['nodeId']
+        node = cdp.send('DOM.querySelector', {'nodeId': root, 'selector': selector})['nodeId']
+        nodes = cdp.send('Accessibility.getPartialAXTree', {'nodeId': node, 'fetchRelatives': False})['nodes']
+        n = next(x for x in nodes if x.get('role', {}).get('value') == 'checkbox')
+        return ' '.join(n.get('name', {}).get('value', '').split()), ' '.join(n.get('description', {}).get('value', '').split())
+    finally:
+        cdp.detach()
 
 
 def contrast(page, root=None):
@@ -334,6 +352,7 @@ with sync_playwright() as p:
         check(f'S {name}: one header, one footer, one main, a skip link that points at it', f['headers'] == 1 and f['footers'] == 1 and f['mains'] == 1 and f['skip'] == '#main', str(f))
         check(f'S {name}: one theme button, wired by the shared script (no inline handler)', f['toggles'] == 1 and not f['inlineToggle'])
         check(f'S {name}: has lang, viewport meta and exactly one h1', f['lang'] == 'en' and f['viewport'] and f['h1'] == 1, f"{f['lang']} {f['viewport']} h1={f['h1']}")
+        check(f'S {name}: no link or button is nested inside a label, link or button', f['nested'] == 0, str(f['nested']))
         check(f'S {name}: nav starts with Topics, Compare, How it works', f['nav'][:3] == ['/topics/', '/compare', '/methodology.html'], str(f['nav']))
         check(f'S {name}: the current page is marked in the nav', f['current'] == ([current] if current else []), str(f['current']))
     ref = facts['home']['footerLinks']
@@ -467,6 +486,38 @@ with sync_playwright() as p:
     check('C3 the selection bar is on screen without scrolling (long list)', in_view(page, '#selectionBar') and in_view(page, '#compareBtn'))
     page.evaluate('window.scrollTo(0, 0)')
     check('C3 ... and stays on screen at the top of the page', in_view(page, '#selectionBar'))
+    structure = page.evaluate("""() => [...document.querySelectorAll('#paperList > .paper-item')].map(it => ({
+        label: it.querySelectorAll(':scope > label.paper-pick').length, inLabel: it.querySelectorAll('label a, label button').length,
+        link: it.querySelectorAll(':scope > a.paper-link').length, boxes: it.querySelectorAll('input[type=checkbox]').length}))""")
+    check('C3 each paper is a card with one label (checkbox and text) and the PubMed link beside it, never inside it',
+          len(structure) == 12 and all(x == {'label': 1, 'inLabel': 0, 'link': 1, 'boxes': 1} for x in structure), str(structure[:2]))
+    name, desc = ax_name_desc(page, '#paperList > .paper-item:nth-child(1) .paper-cb')
+    check('C3 the checkbox is named by the title, year, design and journal only (not the snippet, not the link text)',
+          name == 'Once-weekly semaglutide in adults with overweight or obesity 2021 Randomized controlled trial N Engl J Med', name)
+    check('C3 ... and the snippet is its description', desc == PAPERS[0]['snippet'], desc)
+    name2, desc2 = ax_name_desc(page, '#paperList > .paper-item:nth-child(2) .paper-cb')
+    check('C3 a paper with no snippet has no description, and markup in a title is read as plain text',
+          desc2 == '' and name2.startswith('GLP-1 use and gastrointestinal events <img src=x onerror=alert(1)>'), f'{name2!r} / {desc2!r}')
+    with page.expect_popup() as pop:
+        page.click('#paperList > .paper-item:nth-child(1) a.paper-link')
+    popup = pop.value
+    popup.wait_for_load_state('domcontentloaded')
+    check('C3 clicking View on PubMed opens that article in a new tab and does not tick the paper',
+          popup.url == 'https://pubmed.ncbi.nlm.nih.gov/31000001/' and not page.locator('.paper-cb').first.is_checked() and page.inner_text('#selCount') == '0 of 5 selected', popup.url)
+    popup.close()
+    page.focus('#paperList > .paper-item:nth-child(1) .paper-cb')
+    page.keyboard.press('Tab')
+    on_link = page.evaluate("(() => { const a = document.activeElement; return a.classList.contains('paper-link') ? a.href : ''; })()")
+    page.keyboard.press('Space')
+    page.keyboard.press('Tab')
+    on_next = page.evaluate("(() => { const a = document.activeElement; return a.classList.contains('paper-cb') ? a.value : ''; })()")
+    check('C3 Tab goes from a paper to its own PubMed link and on to the next paper; Space on the link does not tick it',
+          on_link == 'https://pubmed.ncbi.nlm.nih.gov/31000001/' and on_next == '31000002' and page.inner_text('#selCount') == '0 of 5 selected', f'{on_link} {on_next}')
+    page.evaluate('window.scrollTo(0, 0)')
+    page.locator('#paperList .paper-snippet').first.click()
+    first_on = page.locator('.paper-cb').first.is_checked()
+    page.locator('#paperList .paper-year').first.click()
+    check('C3 clicking anywhere in the paper text (snippet, year) ticks and unticks it', first_on and not page.locator('.paper-cb').first.is_checked() and page.inner_text('#selCount') == '0 of 5 selected')
     page.evaluate(SETTLE_JS)
     page.screenshot(path=f'{OUT}/compare-step2-desktop.png')
 
@@ -562,6 +613,16 @@ with sync_playwright() as p:
         check('C9 a table that fits shows no scroll hint', not page.is_visible('#scrollHint'))
     check('C9 the scrollable table can be reached with the keyboard', page.get_attribute('#tableWrap', 'tabindex') == '0' and page.get_attribute('#tableWrap', 'role') == 'region')
     page.click('#newSearchBtn')
+
+    # A paper whose PubMed id is not usable gets no link, and the card still works.
+    state['search'] = 'oddpmid'
+    do_search(page)
+    state['search'] = 'ok'
+    odd = page.evaluate("[...document.querySelectorAll('#paperList > .paper-item')].map(it => ({link: it.querySelectorAll('a').length, hasLink: !!it.querySelector('.paper-pick')?.classList.contains('has-link')}))")
+    check('C9b a paper without a usable PubMed id has no link and still ticks', odd == [{'link': 1, 'hasLink': True}, {'link': 0, 'hasLink': False}], str(odd))
+    pick(page, 2)
+    check('C9b ... and can be compared like any other', page.inner_text('#selCount') == '2 of 5 selected' and not page.is_disabled('#compareBtn'))
+    page.click('#backBtn')
 
     # Prefill from a link.
     goto_compare(page, '?topic=GLP-1%20drugs')
