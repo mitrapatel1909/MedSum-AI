@@ -1,6 +1,6 @@
 # MedSumAI
 
-**Medical research, explained simply.** Built for pre-med and AP Bio students: type a topic, and MedSumAI finds the real articles on PubMed and writes a cited plain-language summary at your reading level, with an evidence snapshot and flashcards you can export to Anki. Free to use, no signup needed.
+**Medical research, explained simply.** Built for pre-med and AP Bio students: type a topic, and MedSumAI finds the real articles on PubMed and writes a cited plain-language summary at your reading level, with an evidence snapshot and flashcards you can export to Anki. You can also pick 2–5 papers and compare them side by side. Free to use, no signup needed.
 
 **Live site:** https://medsumai.com
 
@@ -9,6 +9,7 @@
 ## What it does
 
 - **Search:** Searches PubMed for a topic and summarizes the abstracts it finds, at a reading level you choose (high school, college or pre-med), with a validated PubMed citation link for each article
+- **Compare:** Search PubMed for a topic, pick 2–5 papers, and see each paper's study type, population, methods, main finding and limitations side by side, plus where the papers agree, where they differ and what questions may remain open. The papers in the table are always the ones you picked, with titles, years, journals and links taken from PubMed
 - **Topics library:** 17 curated topic pages with pre-generated educational summaries — ADHD treatment, Alzheimer disease, antibiotic resistance, cancer immunotherapy, concussion recovery in teens, CRISPR gene therapy for sickle cell disease, early peanut introduction, GLP-1 drugs and obesity, gut microbiome, health effects of sleep deprivation, intermittent fasting, long COVID, migraine prevention (CGRP drugs), mRNA vaccines, statins and LDL cholesterol, type 2 diabetes treatment, and vitamin D and depression
 - **Evidence Snapshot:** A plain-language description of the study types and consistency found in the retrieved abstracts — not a formal systematic review or clinical evidence grade, but a transparent account of what was actually retrieved from PubMed
 - **Flashcards:** Exportable Anki-style flashcards from any summary
@@ -19,6 +20,8 @@
 ## Source and methodology limitations
 
 Summaries use PubMed abstracts only, not full-text articles. The Evidence Snapshot is a plain-language description of retrieved study types — it is not a validated clinical grading system. See [medsumai.com/methodology.html](https://medsumai.com/methodology.html) for the full explanation.
+
+Compare also reads abstracts only. Which papers appear in its table is checked against the ones you picked, but what each row says is the AI's reading of the abstract, and the summary of where the papers agree and differ is not linked claim by claim to the papers behind it.
 
 ## How it is built
 
