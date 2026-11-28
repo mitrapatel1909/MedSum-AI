@@ -378,7 +378,11 @@ const COMPARE_JSON = {
     { pmid: '11111111', study_type: 'Meta-analysis', population: 'About 4,000 adults', methods: 'Pooled 12 trials', main_finding: 'Risk fell 12%', limitations: 'Doses differed between trials' },
     { pmid: '22222222', study_type: 'Cohort study', population: 'Adults', methods: 'Observational follow-up', main_finding: 'Positive correlation', limitations: 'Confounding is possible' },
   ],
-  synthesis: { summary: 'Both papers support vitamin D benefits.', agreements: ['Both report a benefit.'], disagreements: ['The size of the effect differs.'] },
+  synthesis: {
+    summary: 'Both papers support vitamin D benefits.',
+    agreements: [{ point: 'Both report a benefit.', pmids: ['11111111', '22222222'] }],
+    disagreements: [{ point: 'The size of the effect differs.', pmids: ['11111111', '22222222'] }],
+  },
   research_gaps: ['Long-term RCTs needed', 'Paediatric populations understudied'],
 };
 
@@ -414,6 +418,8 @@ test('compare: happy path with 2 valid PMIDs returns structured comparison', asy
   assert.equal(comparison.papers.length, 2);
   assert.equal(comparison.synthesis.summary, 'Both papers support vitamin D benefits.');
   assert.deepEqual(comparison.synthesis.agreements, ['Both report a benefit.']);
+  // each point also says which of the selected papers it comes from
+  assert.deepEqual(comparison.synthesis.cited_pmids, { agreements: [['11111111', '22222222']], disagreements: [['11111111', '22222222']] });
   assert.ok(Array.isArray(comparison.research_gaps));
   // titles / years should come from PubMed metadata
   const p = comparison.papers.find((x) => x.pmid === '11111111');

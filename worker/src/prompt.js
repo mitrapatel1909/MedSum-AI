@@ -151,6 +151,7 @@ Rules you must follow:
 - Never invent populations, methods, findings, or numbers that do not appear in the abstracts.
 - Be precise and concise; every cell is read in a comparison table.
 - Never give personal medical advice.
+- For every agreement and disagreement, list in pmids the PMID of each paper that point rests on. Use only PMIDs that appear in <articles>, and keep PMIDs and citations out of the point text. An agreement rests on at least two papers.
 - Return ONLY valid JSON — no markdown fences, no commentary, no text before or after the JSON.
 
 Output this exact JSON structure:
@@ -167,8 +168,14 @@ Output this exact JSON structure:
   ],
   "synthesis": {
     "summary": "<2–3 sentence narrative of what these papers collectively show>",
-    "agreements": ["<point where papers agree>", ...],
-    "disagreements": ["<point where papers disagree or find conflicting results>", ...]
+    "agreements": [
+      { "point": "<point where papers agree>", "pmids": ["<PMID of each paper that supports it>"] },
+      ...
+    ],
+    "disagreements": [
+      { "point": "<point where papers disagree or find conflicting results>", "pmids": ["<PMID of each paper involved>"] },
+      ...
+    ]
   },
   "research_gaps": [
     "<specific unanswered question or underrepresented population>",

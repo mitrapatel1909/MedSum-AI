@@ -255,7 +255,9 @@ async function handleCompare(request, env, deps) {
 
   let rawJson;
   try {
-    rawJson = await callOpenAI(env, buildCompareMessages(articles), 2400, deps.fetchImpl);
+    // Each agreement and disagreement now carries the PMIDs it rests on, which makes a long answer longer: the
+    // ceiling leaves room for it, since an answer cut off mid-JSON is a failed comparison.
+    rawJson = await callOpenAI(env, buildCompareMessages(articles), 3000, deps.fetchImpl);
   } catch {
     return json(request, 502, { error: 'The comparison engine is temporarily unavailable. Please try again in a few minutes.' });
   }
@@ -276,6 +278,9 @@ async function handleCompare(request, env, deps) {
     const mismatch = ['unselected_pmid', 'duplicate_pmid', 'missing_pmid'].includes(checked.reason);
     return json(request, 502, { error: mismatch ? 'The comparison did not match the papers you selected. Please try again.' : 'The comparison returned an unexpected format. Please try again.' });
   }
+  // A point that names no selected paper is still shown, without one. Counting them (never their text) shows how
+  // often the model leaves the papers out, which is how to tell whether the prompt is working.
+  if (checked.points.unnamed) console.warn(`compare: ${checked.points.unnamed} of ${checked.points.total} points named no selected paper`);
 
   return json(request, 200, { comparison: checked.comparison }, { 'Cache-Control': 'no-store' });
 }

@@ -50,10 +50,13 @@ PAPERS = [
 ]
 
 
-def cmp_paper(n, study_type, url, **kw):
+def cmp_paper(n, study_type, url, pmid=None, **kw):
     ex = {'study_type': study_type, 'population': f'Population {n}', 'methods': f'Methods {n}', 'main_finding': f'Finding {n}', 'limitations': f'Limits {n}'}
     ex.update(kw)
-    return {'title': f'Compared paper {n}', 'year': str(2019 + n), 'journal': f'Journal {n}', 'url': url, 'extraction': ex}
+    paper = {'title': f'Compared paper {n}', 'year': str(2019 + n), 'journal': f'Journal {n}', 'url': url, 'extraction': ex}
+    if pmid:
+        paper['pmid'] = pmid
+    return paper
 
 
 SYN = {'summary': 'Across designs, the studies agree that the drugs reduce weight.', 'agreements': ['All report weight loss.'], 'disagreements': ['The size of the effect differs.']}
@@ -74,6 +77,32 @@ COMPARISONS = {
         'papers': [cmp_paper(i, ['Randomized controlled trial', 'Cohort study', 'Meta-analysis'][i % 3], f'https://pubmed.ncbi.nlm.nih.gov/3100000{i}/') for i in range(1, 6)],
         'synthesis': SYN, 'research_gaps': ['One gap.']}},
 }
+
+# Three papers as the Worker sends them: each has its PMID. Paper 2 has no usable PubMed link.
+def cited_papers(with_pmids=True):
+    ids = ['31000001', '31000002', '31000003'] if with_pmids else [None] * 3
+    return [
+        cmp_paper(1, 'Randomized controlled trial', 'https://pubmed.ncbi.nlm.nih.gov/31000001/', ids[0]),
+        cmp_paper(2, 'Cohort study', 'javascript:alert(1)', ids[1]),
+        cmp_paper(3, 'Meta-analysis', 'https://pubmed.ncbi.nlm.nih.gov/31000003/', ids[2]),
+    ]
+
+
+def cited_answer(synthesis, with_pmids=True):
+    return {'comparison': {'papers': cited_papers(with_pmids), 'synthesis': {'summary': SYN['summary'], **synthesis}, 'research_gaps': ['One gap.']}}
+
+
+NAMED = {'agreements': ['All report weight loss.', 'Nausea was the most common side effect.'], 'disagreements': ['The size of the effect differs.'],
+         # Out of order on purpose (the page lists papers in table order), one point naming none, and a PMID that is not in the table.
+         'cited_pmids': {'agreements': [['31000003', '31000001'], []], 'disagreements': [['31000002', '99999999']]}}
+COMPARISONS.update({
+    'cited': cited_answer(NAMED),
+    # Values that should never have been sent: only what can be matched to a paper in the table is used.
+    'cited-junk': cited_answer({'agreements': ['a1'], 'disagreements': ['d1', 'd2', 'd3', 'd4'], 'cited_pmids': {'agreements': 'oops', 'disagreements': [5, None, {'a': 1}, ['31000001']]}}),
+    'cited-str': cited_answer({'agreements': ['a1'], 'disagreements': ['d1'], 'cited_pmids': 'none'}),
+    # The papers have no PMIDs, so nothing can be matched.
+    'cited-nomatch': cited_answer(NAMED, with_pmids=False),
+})
 
 calls = []   # (kind, payload)
 held = []    # routes the test chose not to answer yet
@@ -267,8 +296,8 @@ def watch(page, errors):
     page.on('console', lambda m: errors.append('console.error: ' + m.text) if m.type == 'error' and 'Failed to load resource' not in m.text else None)
 
 
-def ax_name_desc(page, selector):
-    """The accessible name and description Chrome computes for the first checkbox matching the selector."""
+def ax_name_desc(page, selector, role='checkbox'):
+    """The accessible name and description Chrome computes for the first element of that role matching the selector."""
     cdp = page.context.new_cdp_session(page)
     try:
         cdp.send('DOM.enable')
@@ -276,7 +305,7 @@ def ax_name_desc(page, selector):
         root = cdp.send('DOM.getDocument', {'depth': 0})['root']['nodeId']
         node = cdp.send('DOM.querySelector', {'nodeId': root, 'selector': selector})['nodeId']
         nodes = cdp.send('Accessibility.getPartialAXTree', {'nodeId': node, 'fetchRelatives': False})['nodes']
-        n = next(x for x in nodes if x.get('role', {}).get('value') == 'checkbox')
+        n = next(x for x in nodes if x.get('role', {}).get('value') == role)
         return ' '.join(n.get('name', {}).get('value', '').split()), ' '.join(n.get('description', {}).get('value', '').split())
     finally:
         cdp.detach()
@@ -289,6 +318,20 @@ def contrast(page, root=None):
 
 def header_bottom(page):
     return page.evaluate("Math.max(0, document.querySelector('.site-header').getBoundingClientRect().bottom)")
+
+
+def dom_texts(page, sel):
+    # textContent, not innerText: innerText applies CSS text-transform, so a label styled in capitals reads back in capitals.
+    return page.evaluate("sel => [...document.querySelectorAll(sel)].map(e => e.textContent.trim())", sel)
+
+
+def text_of(loc):
+    # Text of the first match, or '' when nothing matches (so a missing element is a failed check, not a 30 second timeout).
+    return loc.first.inner_text() if loc.count() else ''
+
+
+def attr_of(loc, name):
+    return loc.first.get_attribute(name) if loc.count() else None
 
 
 def rect(page, sel):
@@ -562,6 +605,8 @@ with sync_playwright() as p:
     check('C5 untrusted text is never turned into markup', page.locator('#step3 img, #step3 script').count() == 0 and '<script>' in page.inner_text('#compTable') and not page.evaluate("document.querySelector('#step3').innerHTML.includes('javascript:')"))
     check('C5 synthesis, agreement and difference blocks render', 'agree that the drugs reduce weight' in page.inner_text('#synthesisSummary') and 'where studies agree' in page.inner_text('#agreeDisagree').lower() and 'where studies differ' in page.inner_text('#agreeDisagree').lower())
     check('C5 research gaps are numbered', page.locator('.gap-item .gap-num').all_inner_texts() == ['G1', 'G2'])
+    check('C5 each paper is numbered in the table', dom_texts(page, '#compTable thead .col-num') == ['Paper 1', 'Paper 2', 'Paper 3'], str(dom_texts(page, '#compTable thead .col-num')))
+    check('C5 an answer that names no papers adds no source rows and no note to the points', page.locator('#agreeDisagree .src').count() == 0 and page.locator('#agreeDisagree .src-chip').count() == 0 and not page.is_visible('#srcNote') and page.locator('#agreeDisagree li').all_inner_texts() == ['All report weight loss.', 'The size of the effect differs.'])
     check('C5 the limits notice is present', 'abstracts only' in page.inner_text('#step3 .limits').lower())
     check('C5 desktop shows the table, not the phone cards', page.is_visible('#tableWrap') and not page.is_visible('#compCards'))
     page.evaluate(SETTLE_JS)
@@ -598,6 +643,49 @@ with sync_playwright() as p:
     do_search(page)
     run_compare(page, 2, 'nosyn')
     check('C8 a missing synthesis shows a plain fallback sentence', 'No overall synthesis' in page.inner_text('#synthesisSummary') and page.locator('#agreeDisagree > div').count() == 0)
+    page.click('#newSearchBtn')
+
+    # Which papers each point comes from: numbers that open the paper on PubMed, and nothing new when the answer names none.
+    do_search(page)
+    run_compare(page, 3, 'cited')
+    first = page.locator('#agreeDisagree .agree-box li').nth(0)
+    check('C16 a point says which papers it comes from, by number, in table order however the answer listed them', text_of(first.locator('.src > span:first-child')) == 'From papers' and first.locator('.src-chip').all_inner_texts() == ['1', '3'], first.inner_text())
+    check('C16 the point itself is still only its own sentence', page.evaluate("document.querySelector('#agreeDisagree .agree-box li').firstChild.textContent") == 'All report weight loss.')
+    links = page.evaluate("[...document.querySelectorAll('#agreeDisagree .agree-box li:first-child a.src-chip')].map(a => [a.href, a.target, a.rel])")
+    check('C16 each number opens that paper on PubMed in a new tab', links == [['https://pubmed.ncbi.nlm.nih.gov/31000001/', '_blank', 'noopener'], ['https://pubmed.ncbi.nlm.nih.gov/31000003/', '_blank', 'noopener']], str(links))
+    try:
+        name, _ = ax_name_desc(page, '#agreeDisagree .agree-box li:first-child a.src-chip', 'link')
+    except Exception as e:
+        name = f'(no link found: {type(e).__name__})'
+    check('C16 a number is named for screen readers: which paper, and that it opens PubMed', name == 'Paper 1: Compared paper 1 (opens PubMed)', name)
+    second = page.locator('#agreeDisagree .agree-box li').nth(1)
+    check('C16 a point that names no paper says so', text_of(second.locator('.src-none')) == 'Source papers not named' and second.locator('.src-chip').count() == 0, second.inner_text())
+    differ = page.locator('#agreeDisagree .disagree-box li').nth(0)
+    check('C16 a paper that is not in the table is ignored, and one with no PubMed link is a number, not a link', differ.locator('.src-chip').all_inner_texts() == ['2'] and differ.locator('a').count() == 0 and attr_of(differ.locator('.src-chip'), 'aria-label') == 'Paper 2: Compared paper 2', differ.inner_text())
+    check('C16 a note says the AI chose the papers and to check them', page.is_visible('#srcNote') and 'AI chooses' in page.inner_text('#srcNote') and 'check' in page.inner_text('#srcNote'))
+    check('C16 the numbers are the same ones the table uses', dom_texts(page, '#compTable thead .col-num') == ['Paper 1', 'Paper 2', 'Paper 3'], str(dom_texts(page, '#compTable thead .col-num')))
+    page.evaluate("() => { const el = document.querySelector('#synthesisSummary'); window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 150, behavior: 'instant' }); }")
+    page.wait_for_timeout(250)
+    page.screenshot(path=f'{OUT}/compare-sources-desktop.png')
+    page.click('#copyBtn')
+    page.wait_for_timeout(150)
+    text = page.evaluate('window.__copied') or ''
+    check('C16 Copy names the papers behind each point, with the same numbers', '- All report weight loss. (papers 1, 3)\n' in text and '- Nausea was the most common side effect.\n' in text and '- The size of the effect differs. (paper 2)\n' in text, text[-420:])
+    page.wait_for_timeout(2400)
+    page.click('#newSearchBtn')
+
+    do_search(page)
+    run_compare(page, 3, 'cited-junk')
+    rows = page.evaluate("[...document.querySelectorAll('#agreeDisagree li')].map(li => (li.querySelector('.src')?.innerText ?? '').replace(/\\s+/g, ' '))")
+    check('C16 values that match no paper are ignored; the one that does still shows (a1, then d1 to d4)', rows == ['Source papers not named'] * 4 + ['From paper 1'], str(rows))
+    page.click('#newSearchBtn')
+    do_search(page)
+    run_compare(page, 3, 'cited-str')
+    check('C16 cited_pmids that is not even a list of lists changes nothing', page.locator('#agreeDisagree .src').count() == 0 and not page.is_visible('#srcNote') and page.locator('#agreeDisagree li').all_inner_texts() == ['a1', 'd1'])
+    page.click('#newSearchBtn')
+    do_search(page)
+    run_compare(page, 3, 'cited-nomatch')
+    check('C16 PMIDs that match no paper in the table add nothing (papers without PMIDs, an older Worker)', page.locator('#agreeDisagree .src').count() == 0 and not page.is_visible('#srcNote') and page.locator('#agreeDisagree li').count() == 3 and page.locator('#compTable thead .col-num').count() == 3)
     page.click('#newSearchBtn')
 
     # Wide table: scroll hint.
@@ -687,10 +775,21 @@ with sync_playwright() as p:
     check('C14 phone: results are one card per paper, not a table', page.is_visible('#compCards') and page.locator('#compCards article').count() == 3 and not page.is_visible('#tableWrap') and [t.lower() for t in page.locator('#compCards article:first-child dt').all_inner_texts()] == ['study type', 'population', 'methods', 'key finding', 'limitations'])
     check('C14 phone: nothing scrolls sideways', page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
     check('C14 phone: only valid PubMed links in the cards', page.evaluate("[...document.querySelectorAll('#compCards a.col-link')].map(a => a.href)") == ['https://pubmed.ncbi.nlm.nih.gov/31000001/'])
+    check('C14 phone: each card says which paper it is', dom_texts(page, '#compCards .col-num') == ['Paper 1', 'Paper 2', 'Paper 3'], str(dom_texts(page, '#compCards .col-num')))
     top = rect(page, '#step3')['top'] - header_bottom(page)
     check('C14 phone: lands on the top of the results', -1 <= top <= 120, f'{top}px')
     page.evaluate(SETTLE_JS)
     page.screenshot(path=f'{OUT}/compare-results-phone.png')
+    page.click('#changeSelBtn')
+    state['compare'] = 'cited'
+    page.click('#compareBtn')
+    page.wait_for_selector('#step3:not(.hidden)')
+    page.wait_for_timeout(200)
+    chips = page.evaluate("[...document.querySelectorAll('#agreeDisagree .src-chip')].map(c => { const r = c.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; })")
+    check('C14 phone: the numbers under each point fit the screen and are at least 24px to tap', page.evaluate("document.documentElement.scrollWidth <= window.innerWidth") and len(chips) == 3 and all(w >= 24 and h >= 24 for w, h in chips), str(chips))
+    page.evaluate("() => { const el = document.querySelector('#synthesisSummary'); window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: 'instant' }); }")
+    page.wait_for_timeout(250)
+    page.screenshot(path=f'{OUT}/compare-sources-phone.png')
     page.click('#changeSelBtn')
     page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
     state['compare'] = '502'
@@ -730,6 +829,15 @@ with sync_playwright() as p:
             page.click('#compareBtn')
             page.wait_for_selector('#step3:not(.hidden)')
             scan('step 3 results')
+            page.click('#changeSelBtn')
+            state['compare'] = 'cited'
+            page.click('#compareBtn')
+            page.wait_for_selector('#step3:not(.hidden)')
+            scan('step 3 results with the papers behind each point')
+            if theme == 'dark' and width == 1280:
+                page.evaluate("() => { const el = document.querySelector('#synthesisSummary'); window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 150, behavior: 'instant' }); }")
+                page.wait_for_timeout(250)
+                page.screenshot(path=f'{OUT}/compare-sources-dark.png')
             page.click('#changeSelBtn')
             state['compare'] = '502'
             page.click('#compareBtn')

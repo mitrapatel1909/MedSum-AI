@@ -124,6 +124,9 @@
     .col-meta { font-size: 0.7rem; color: var(--muted); }
     .col-link { display: inline-block; margin-top: 0.3rem; font-size: 0.75rem; color: var(--accent); text-decoration: none; }
     .col-link:hover { text-decoration: underline; }
+    /* Each paper is numbered, so a point in the synthesis can say which papers it comes from. */
+    .col-num { margin-bottom: 0.3rem; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+    .comp-card .col-num { margin-bottom: 0.2rem; }
 
     /* phones: stacked cards instead of a table */
     .comp-cards { display: none; padding: 1rem; flex-direction: column; gap: 0.9rem; border-top: 1px solid var(--border); margin-top: 1rem; }
@@ -154,6 +157,12 @@
     .agree-box li, .disagree-box li { padding-left: 1.1rem; position: relative; line-height: 1.5; }
     .agree-box li::before { content: '✓'; position: absolute; left: 0; color: var(--accent); font-size: 0.75rem; }
     .disagree-box li::before { content: '≠'; position: absolute; left: 0; color: var(--warn); font-size: 0.75rem; }
+    /* Under a point: the papers it says it comes from, as numbers that open the paper on PubMed. */
+    .src-note { margin: 0 0 1rem; font-size: 0.8rem; line-height: 1.55; color: var(--muted); }
+    .src { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.4rem; margin-top: 0.35rem; font-size: 0.72rem; line-height: 1.4; color: var(--muted); }
+    .src-none { font-style: italic; }
+    .src-chip { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-width: 1.65rem; height: 1.65rem; padding: 0 0.35rem; border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border)); border-radius: 999px; background: var(--card); color: var(--accent); font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; line-height: 1; text-decoration: none; }
+    a.src-chip:hover { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
     .gaps-intro { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
     .gap-list { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -288,6 +297,7 @@
           <span class="chip">AI interpretation</span>
         </div>
         <div class="synthesis-text" id="synthesisSummary"></div>
+        <p class="src-note hidden" id="srcNote">Numbers match the papers listed above. The AI chooses which papers each point comes from, so check a point against the paper itself.</p>
         <div class="agree-disagree" id="agreeDisagree"></div>
       </div>
 
@@ -625,7 +635,7 @@
       renderTable(cmp.papers, differs);
       renderCards(cmp.papers, differs);
       renderDesignNote(cmp.papers, differs);
-      renderSynthesis(cmp.synthesis || {});
+      renderSynthesis(cmp);
       renderGaps(cmp.research_gaps);
     }
 
@@ -648,11 +658,12 @@
       th0.scope = 'col';
       th0.innerHTML = '<span class="sr-only">Detail</span>';
       hr.appendChild(th0);
-      papers.forEach(p => {
+      papers.forEach((p, i) => {
         const th = document.createElement('th');
         th.scope = 'col';
         const href = pubmedHref(p.url);
         th.innerHTML = `
+          <div class="col-num">Paper ${i + 1}</div>
           <div class="col-title" title="${escHtml(p.title || '')}">${escHtml(p.title || 'Untitled paper')}</div>
           <div class="col-meta">${escHtml(p.year || '')}${p.year && p.journal ? ' · ' : ''}${escHtml((p.journal || '').slice(0, 60))}</div>
           ${href ? `<a href="${href}" target="_blank" rel="noopener" class="col-link">PubMed ↗</a>` : ''}`;
@@ -698,13 +709,14 @@
     function renderCards(papers, differs) {
       const wrap = $('compCards');
       wrap.innerHTML = '';
-      papers.forEach(p => {
+      papers.forEach((p, i) => {
         const card = document.createElement('article');
         card.className = 'comp-card' + (differs ? ' differs-card' : '');
         const href = pubmedHref(p.url);
         const dl = ROWS.map(({ key, label }) =>
           `<div class="${key === 'study_type' ? 'type-row' : ''}"><dt>${label}</dt><dd>${escHtml(field(p, key) || '—')}</dd></div>`).join('');
         card.innerHTML = `
+          <div class="col-num">Paper ${i + 1}</div>
           <h3>${escHtml(p.title || 'Untitled paper')}</h3>
           <div class="col-meta">${escHtml(p.year || '')}${p.year && p.journal ? ' · ' : ''}${escHtml((p.journal || '').slice(0, 60))}</div>
           ${href ? `<a href="${href}" target="_blank" rel="noopener" class="col-link">PubMed ↗</a>` : ''}
@@ -713,25 +725,86 @@
       });
     }
 
-    function renderSynthesis(syn) {
+    // The papers a point says it comes from, as 1-based paper numbers in table order ([] when it names none).
+    // kind is 'agreements' or 'disagreements'; i is the point's place in that list. synthesis.cited_pmids only comes
+    // from a newer Worker, and it is the AI's own attribution (the Worker has only checked that the papers are among
+    // the ones selected), so anything that does not line up with a paper in the table is ignored.
+    function citedNumbers(cmp, kind, i) {
+      const cited = cmp.synthesis && cmp.synthesis.cited_pmids;
+      const lists = cited && Array.isArray(cited[kind]) ? cited[kind] : [];
+      const ids = Array.isArray(lists[i]) ? lists[i].map(String) : [];
+      const nums = [];
+      (cmp.papers || []).forEach((p, n) => { if (p && p.pmid != null && ids.includes(String(p.pmid))) nums.push(n + 1); });
+      return nums;
+    }
+
+    // "From papers 1 3": each number opens that paper on PubMed. A point that names none says so.
+    function sourceRow(cmp, nums) {
+      const row = document.createElement('div');
+      row.className = 'src';
+      if (!nums.length) {
+        row.classList.add('src-none');
+        row.textContent = 'Source papers not named';
+        return row;
+      }
+      const label = document.createElement('span');
+      label.textContent = nums.length === 1 ? 'From paper' : 'From papers';
+      row.appendChild(label);
+      nums.forEach(n => {
+        const p = cmp.papers[n - 1];
+        const href = pubmedHref(p.url);
+        const title = String(p.title || 'Untitled paper');
+        const name = `Paper ${n}: ${title.length > 110 ? title.slice(0, 110).replace(/\s+\S*$/, '') + '…' : title}`;
+        const chip = document.createElement(href ? 'a' : 'span');
+        chip.className = 'src-chip';
+        chip.textContent = String(n);
+        if (href) {
+          chip.href = href;
+          chip.target = '_blank';
+          chip.rel = 'noopener';
+          chip.setAttribute('aria-label', `${name} (opens PubMed)`);
+        } else {
+          chip.setAttribute('role', 'img');
+          chip.setAttribute('aria-label', name);
+        }
+        row.appendChild(chip);
+      });
+      return row;
+    }
+
+    function renderSynthesis(cmp) {
+      const syn = cmp.synthesis || {};
       $('synthesisSummary').textContent = syn.summary || 'No overall synthesis was returned for these papers.';
+
+      const agreements = Array.isArray(syn.agreements) ? syn.agreements : [];
+      const disagreements = Array.isArray(syn.disagreements) ? syn.disagreements : [];
+      const named = (kind, items) => items.map((_, i) => citedNumbers(cmp, kind, i));
+      const aNums = named('agreements', agreements);
+      const dNums = named('disagreements', disagreements);
+      // Only when some point names its papers do the others say they do not, and the note appears. An answer that
+      // names none (an older Worker) looks the way it always did.
+      const anyNamed = [...aNums, ...dNums].some(n => n.length);
+      $('srcNote').classList.toggle('hidden', !anyNamed);
 
       const ad = $('agreeDisagree');
       ad.innerHTML = '';
-      const block = (cls, title, items) => {
+      const block = (cls, title, items, nums) => {
         const div = document.createElement('div');
         div.className = cls;
         const h = document.createElement('h3');
         h.textContent = title;
         const ul = document.createElement('ul');
-        items.forEach(t => { const li = document.createElement('li'); li.textContent = String(t); ul.appendChild(li); });
+        items.forEach((t, i) => {
+          const li = document.createElement('li');
+          li.textContent = String(t);
+          if (anyNamed) li.appendChild(sourceRow(cmp, nums[i]));
+          ul.appendChild(li);
+        });
         div.append(h, ul);
         ad.appendChild(div);
       };
-      const agreements = Array.isArray(syn.agreements) ? syn.agreements : [];
-      const disagreements = Array.isArray(syn.disagreements) ? syn.disagreements : [];
-      if (agreements.length) block('agree-box', 'Where studies agree', agreements);
-      if (disagreements.length) block('disagree-box', 'Where studies differ', disagreements);
+      if (agreements.length) block('agree-box', 'Where studies agree', agreements, aNums);
+      if (disagreements.length) block('disagree-box', 'Where studies differ', disagreements, dNums);
     }
 
     function renderGaps(gaps) {
@@ -781,8 +854,13 @@
       const s = c.synthesis || {};
       const list = v => (Array.isArray(v) ? v : []);
       lines.push('Synthesis (AI interpretation)', s.summary || '—', '');
-      if (list(s.agreements).length) lines.push('Where studies agree', ...list(s.agreements).map(a => `- ${a}`), '');
-      if (list(s.disagreements).length) lines.push('Where studies differ', ...list(s.disagreements).map(d => `- ${d}`), '');
+      // A point that names its papers ends with them, using the same numbers as the list above.
+      const point = (kind, items) => items.map((t, i) => {
+        const nums = citedNumbers(c, kind, i);
+        return `- ${t}${nums.length ? ` (${nums.length > 1 ? 'papers' : 'paper'} ${nums.join(', ')})` : ''}`;
+      });
+      if (list(s.agreements).length) lines.push('Where studies agree', ...point('agreements', list(s.agreements)), '');
+      if (list(s.disagreements).length) lines.push('Where studies differ', ...point('disagreements', list(s.disagreements)), '');
       if (list(c.research_gaps).length) lines.push('Potential research gaps (AI suggestions)', ...list(c.research_gaps).map((g, i) => `${i + 1}. ${g}`), '');
       lines.push('Generated by MedSumAI · medsumai.com. Based on PubMed abstracts only. Not medical advice.');
       return lines.join('\n');
