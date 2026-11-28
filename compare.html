@@ -64,11 +64,14 @@
     /* ── Paper list (step 2) ── */
     .select-help { font-size: 0.88rem; color: var(--muted); line-height: 1.6; margin: -0.3rem 0 1.1rem; }
     .paper-list { display: flex; flex-direction: column; gap: 0.7rem; }
-    .paper-item { position: relative; display: flex; gap: 0.9rem; align-items: flex-start; padding: 1rem 1.15rem; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--card); cursor: pointer; transition: border-color 0.15s, background 0.15s; user-select: none; }
+    .paper-item { position: relative; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--card); transition: border-color 0.15s, background 0.15s; }
     .paper-item:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--card)); }
     .paper-item.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--card)); }
     .paper-item.nudge { animation: nudge 0.3s; }
     @keyframes nudge { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+    /* The label is the click target for the checkbox and the paper text. The PubMed link is its sibling, never inside it. */
+    .paper-pick { display: flex; gap: 0.9rem; align-items: flex-start; padding: 1rem 1.15rem; cursor: pointer; user-select: none; }
+    .paper-pick.has-link { padding-bottom: 0.1rem; }
     .paper-check { width: 20px; height: 20px; border: 1.5px solid var(--border); border-radius: 5px; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: transparent; transition: all 0.15s; }
     .paper-item.selected .paper-check { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
     .paper-cb:focus-visible + .paper-check { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -78,7 +81,8 @@
     .paper-year { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
     .paper-journal { font-size: 0.75rem; color: var(--muted); max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .paper-snippet { font-size: 0.8rem; color: var(--muted); line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-    .paper-link { display: inline-block; margin-top: 0.4rem; font-size: 0.75rem; color: var(--accent); text-decoration: none; }
+    /* Lines up with the paper text (card padding + checkbox + gap); the padding makes the target at least 24px tall. */
+    .paper-link { display: block; width: fit-content; margin: 0 1.15rem 0.7rem calc(1.15rem + 20px + 0.9rem); padding: 0.3rem 0; font-size: 0.75rem; line-height: 1.4; color: var(--accent); text-decoration: none; }
     .paper-link:hover { text-decoration: underline; }
 
     .selection-bar { position: sticky; bottom: 0.75rem; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; flex-wrap: wrap; margin-top: 1.25rem; padding: 0.8rem 1rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 28px color-mix(in srgb, #000 12%, transparent); }
@@ -456,24 +460,29 @@
       list.innerHTML = '';
       $('searchResultLabel').textContent = `${currentPapers.length} papers found for “${currentTopic}”`;
 
-      currentPapers.forEach(p => {
+      currentPapers.forEach((p, idx) => {
         const pmid = String(p.pmid);
         const href = pmidHref(pmid);
-        const item = document.createElement('label');
+        const id = `paper-${idx}`;
+        const item = document.createElement('div');
         item.className = 'paper-item' + (selectedPmids.has(pmid) ? ' selected' : '');
+        // The label holds the checkbox and the paper text. The PubMed link is beside it, not inside it: a link inside a
+        // label becomes part of the checkbox's name. The name is the title and details; the snippet is its description.
         item.innerHTML = `
-          <input type="checkbox" class="paper-cb sr-only" value="${escHtml(pmid)}"${selectedPmids.has(pmid) ? ' checked' : ''}>
-          <span class="paper-check" aria-hidden="true">✓</span>
-          <span class="paper-info">
-            <span class="paper-title">${escHtml(p.title)}</span>
-            <span class="paper-meta">
-              <span class="paper-year">${escHtml(p.year || '—')}</span>
-              ${p.studyType ? `<span class="chip${strongType(p.studyType) ? ' chip-accent' : ''}">${escHtml(p.studyType)}</span>` : ''}
-              ${p.journal ? `<span class="paper-journal" title="${escHtml(p.journal)}">${escHtml(p.journal)}</span>` : ''}
+          <label class="paper-pick${href ? ' has-link' : ''}">
+            <input type="checkbox" class="paper-cb sr-only" value="${escHtml(pmid)}" aria-labelledby="${id}-title ${id}-meta"${p.snippet ? ` aria-describedby="${id}-snippet"` : ''}${selectedPmids.has(pmid) ? ' checked' : ''}>
+            <span class="paper-check" aria-hidden="true">✓</span>
+            <span class="paper-info">
+              <span class="paper-title" id="${id}-title">${escHtml(p.title)}</span>
+              <span class="paper-meta" id="${id}-meta">
+                <span class="paper-year">${escHtml(p.year || '—')}</span>
+                ${p.studyType ? `<span class="chip${strongType(p.studyType) ? ' chip-accent' : ''}">${escHtml(p.studyType)}</span>` : ''}
+                ${p.journal ? `<span class="paper-journal" title="${escHtml(p.journal)}">${escHtml(p.journal)}</span>` : ''}
+              </span>
+              ${p.snippet ? `<span class="paper-snippet" id="${id}-snippet">${escHtml(p.snippet)}</span>` : ''}
             </span>
-            ${p.snippet ? `<span class="paper-snippet">${escHtml(p.snippet)}</span>` : ''}
-            ${href ? `<a class="paper-link" href="${href}" target="_blank" rel="noopener">View on PubMed ↗</a>` : ''}
-          </span>`;
+          </label>
+          ${href ? `<a class="paper-link" href="${href}" target="_blank" rel="noopener">View on PubMed ↗</a>` : ''}`;
         const cb = item.querySelector('input');
         cb.addEventListener('change', () => onPick(cb, item, pmid));
         list.appendChild(item);
