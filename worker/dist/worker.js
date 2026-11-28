@@ -36,8 +36,8 @@ function parseArticles(xml) {
     let m;
     while (m = re.exec(b)) {
       const label = (m[1].match(/Label="([^"]*)"/) || [])[1];
-      const text = stripTags(m[2]);
-      if (text) parts.push(label ? `${label}: ${text}` : text);
+      const text2 = stripTags(m[2]);
+      if (text2) parts.push(label ? `${label}: ${text2}` : text2);
     }
     if (!parts.length) continue;
     const journal = stripTags((b.match(/<Title>([\s\S]*?)<\/Title>/) || [])[1] || "");
@@ -97,8 +97,8 @@ async function searchPubMed(topic, { fetchImpl = (...a) => fetch(...a), apiKey, 
   articles.sort((a, b) => rank(a) - rank(b));
   return articles.slice(0, maxArticles);
 }
-function parseInput(text) {
-  const t = String(text || "").trim();
+function parseInput(text2) {
+  const t = String(text2 || "").trim();
   if (!t || t.length > 300) return null;
   let m = t.match(/^(?:https?:\/\/)?(?:www\.)?(?:pubmed\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov\/pubmed)\/(\d{1,9})(?:[/?#].*)?$/i);
   if (m) return { kind: "pmid", value: m[1] };
@@ -205,10 +205,10 @@ ${summary}
 Question: ${question}` }
   ];
 }
-function linkCitations(text, articles) {
+function linkCitations(text2, articles) {
   const valid = new Map(articles.map((a) => [a.pmid, a.url]));
   const link = (id) => `[PMID ${id}](${valid.get(id)})`;
-  return text.replace(/\[PMIDs?:?\s*([\d\s,;and]+)\]/gi, (_, ids) => {
+  return text2.replace(/\[PMIDs?:?\s*([\d\s,;and]+)\]/gi, (_, ids) => {
     const kept = (ids.match(/\d{5,9}/g) || []).filter((id) => valid.has(id));
     return kept.length ? kept.map(link).join(" ") : "";
   }).replace(/[ \t]+([.,;:])/g, "$1");
@@ -319,16 +319,76 @@ ${body}
 function stripCitations(t) {
   return t.replace(/\[PMIDs?:?[^\]]*\](\([^)]*\))?/gi, "").replace(/\s+/g, " ").replace(/\s+([.,;:])/g, "$1").trim();
 }
-function parseCards(text) {
+function parseCards(text2) {
   const cards = [];
   const re = /^Q:\s*(.+?)\s*\n+A:\s*([\s\S]+?)(?=\n\s*Q:|(?![\s\S]))/gim;
   let m;
-  while ((m = re.exec(String(text || ""))) && cards.length < 12) {
+  while ((m = re.exec(String(text2 || ""))) && cards.length < 12) {
     const front = stripCitations(m[1]);
     const back = stripCitations(m[2]);
     if (front.length >= 5 && front.length <= 300 && back.length >= 2 && back.length <= 700) cards.push({ front, back });
   }
   return cards;
+}
+
+// src/compare.js
+var COMPARE_FIELDS = ["study_type", "population", "methods", "main_finding", "limitations"];
+var MAX_FIELD = 600;
+var MAX_SUMMARY = 1200;
+var MAX_ITEM = 500;
+var MAX_ITEMS = 8;
+function text(v, max) {
+  let s;
+  if (typeof v === "string") s = v;
+  else if (typeof v === "number" && Number.isFinite(v)) s = String(v);
+  else if (Array.isArray(v)) s = v.filter((x) => typeof x === "string" || typeof x === "number").join("; ");
+  else return "";
+  s = s.replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g, " ").replace(/\s+/g, " ").trim();
+  if (s.length <= max) return s;
+  return s.slice(0, max).replace(/\s+\S*$/, "").replace(/[\s.,;:]+$/, "") + "\u2026";
+}
+function list(v) {
+  if (!Array.isArray(v)) return [];
+  const out = [];
+  for (const item of v) {
+    const s = text(item, MAX_ITEM);
+    if (s) out.push(s);
+    if (out.length === MAX_ITEMS) break;
+  }
+  return out;
+}
+function synthesisOf(v) {
+  if (typeof v === "string" && v.trim()) v = { summary: v };
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  return { summary: text(v.summary, MAX_SUMMARY), agreements: list(v.agreements), disagreements: list(v.disagreements) };
+}
+var pmidOf = (v) => typeof v === "string" || typeof v === "number" ? String(v).trim().replace(/^PMID:?\s*/i, "") : "";
+var isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+function validateComparison(parsed, articles) {
+  const reject = (reason) => ({ ok: false, reason });
+  if (!isObject(parsed) || !Array.isArray(parsed.papers) || !Array.isArray(parsed.research_gaps)) return reject("format");
+  const synthesis = synthesisOf(parsed.synthesis);
+  if (!synthesis) return reject("format");
+  const selected = new Set(articles.map((a) => a.pmid));
+  const extracted = /* @__PURE__ */ new Map();
+  for (const p of parsed.papers) {
+    if (!isObject(p)) return reject("format");
+    const pmid = pmidOf(p.pmid);
+    if (!selected.has(pmid)) return reject("unselected_pmid");
+    if (extracted.has(pmid)) return reject("duplicate_pmid");
+    extracted.set(pmid, p);
+  }
+  if (extracted.size !== selected.size) return reject("missing_pmid");
+  const papers = [];
+  for (const a of articles) {
+    const p = extracted.get(a.pmid);
+    const row = { pmid: a.pmid, title: a.title, year: a.year, journal: a.journal, url: a.url };
+    for (const f of COMPARE_FIELDS) row[f] = text(p[f], MAX_FIELD);
+    if (!row.population && !row.methods && !row.main_finding && !row.limitations) return reject("empty_paper");
+    if (!row.study_type) row.study_type = a.studyType;
+    papers.push(row);
+  }
+  return { ok: true, comparison: { papers, synthesis, research_gaps: list(parsed.research_gaps) } };
 }
 
 // src/digest.js
@@ -366,16 +426,16 @@ function pickTopic(topics, date) {
   return topics[(year * 53 + week) % topics.length];
 }
 var esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-function inline(text) {
+function inline(text2) {
   let out = "";
   let pos = 0;
   const plain = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  for (const m of text.matchAll(/\[([^\]]+)\]\(([^)\s]+)\)/g)) {
-    out += plain(text.slice(pos, m.index));
+  for (const m of text2.matchAll(/\[([^\]]+)\]\(([^)\s]+)\)/g)) {
+    out += plain(text2.slice(pos, m.index));
     out += PUBMED.test(m[2]) ? `<a href="${esc(m[2])}" style="color:#2d6a4f">${esc(m[1])}</a>` : esc(m[1]);
     pos = m.index + m[0].length;
   }
-  return out + plain(text.slice(pos));
+  return out + plain(text2.slice(pos));
 }
 function section(md, name) {
   const m = md.match(new RegExp("^##\\s+" + name + "\\s*\\n([\\s\\S]*?)(?=^##\\s|$(?![\\s\\S]))", "m"));
@@ -400,7 +460,7 @@ ${bullets ? `<h2 style="font-size:19px;margin:22px 0 8px;font-weight:400">Key fi
 <hr style="border:0;border-top:1px solid #ddd9d0;margin:0 0 16px"/>
 <p style="font:12px/1.55 Arial,sans-serif;color:#6b6b63;margin:0">AI-written summary of PubMed abstracts. It can contain mistakes and is not medical advice. Check the sources on <a href="${SITE}" style="color:#6b6b63">medsumai.com</a>.<br/>You get this because you joined the MedSumAI mailing list. <a href="${esc(unsubscribeUrl2)}" style="color:#6b6b63">Unsubscribe</a>.</p>
 </div></body></html>`;
-  const text = `${topic}: what the research says
+  const text2 = `${topic}: what the research says
 
 ${stripMd(plain)}
 
@@ -413,7 +473,7 @@ Summarize this at your level: ${prefill}
 AI-written summary of PubMed abstracts. Not medical advice.
 Unsubscribe: ${unsubscribeUrl2}
 `;
-  return { subject, html, text };
+  return { subject, html, text: text2 };
 }
 var unsubscribeUrl = (token) => `${API}/unsubscribe?token=${token}`;
 function supabaseHeaders(env) {
@@ -543,8 +603,8 @@ function corsHeaders(request) {
 function json(request, status, obj, extra = {}) {
   return new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json", ...corsHeaders(request), ...extra } });
 }
-function markdown(request, text) {
-  return new Response(text, { status: 200, headers: { "Content-Type": "text/markdown; charset=utf-8", "Cache-Control": "no-store", ...corsHeaders(request) } });
+function markdown(request, text2) {
+  return new Response(text2, { status: 200, headers: { "Content-Type": "text/markdown; charset=utf-8", "Cache-Control": "no-store", ...corsHeaders(request) } });
 }
 async function visitorKey(request, env) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
@@ -574,10 +634,10 @@ async function checkLimits(env, action, who) {
 async function readBody(request) {
   const len = Number(request.headers.get("Content-Length") || 0);
   if (len > MAX_BODY_BYTES) return { error: "Request too large." };
-  const text = await request.text();
-  if (text.length > MAX_BODY_BYTES) return { error: "Request too large." };
+  const text2 = await request.text();
+  if (text2.length > MAX_BODY_BYTES) return { error: "Request too large." };
   try {
-    const body = JSON.parse(text);
+    const body = JSON.parse(text2);
     return body && typeof body === "object" ? { body } : { error: "Invalid request." };
   } catch {
     return { error: "Invalid request." };
@@ -602,9 +662,9 @@ async function callOpenAI(env, messages, maxTokens, fetchImpl = fetch) {
   });
   if (!res.ok) throw new Error(`OpenAI ${res.status}`);
   const data = await res.json();
-  const text = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-  if (!text || !text.trim()) throw new Error("OpenAI returned no text");
-  return text;
+  const text2 = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  if (!text2 || !text2.trim()) throw new Error("OpenAI returned no text");
+  return text2;
 }
 async function handleSummarize(request, env, deps) {
   const { body, error } = await readBody(request);
@@ -671,8 +731,8 @@ I could not find PubMed abstracts for **${topic.replace(/[*_`<>[\]]/g, "")}**. T
   emit({ stage: "abstracts", count: articles.length });
   emit({ stage: "write" });
   try {
-    const text = await callOpenAI(env, buildSummaryMessages(paper ? `one specific paper (PMID ${articles[0].pmid}): ${articles[0].title}` : topic, articles, level), 1800, deps.fetchImpl);
-    return { markdown: assembleSummary(text, articles) };
+    const text2 = await callOpenAI(env, buildSummaryMessages(paper ? `one specific paper (PMID ${articles[0].pmid}): ${articles[0].title}` : topic, articles, level), 1800, deps.fetchImpl);
+    return { markdown: assembleSummary(text2, articles) };
   } catch {
     return { status: 502, error: "The summarizer is temporarily unavailable. Please try again in a few minutes." };
   }
@@ -736,15 +796,13 @@ async function handleCompare(request, env, deps) {
   } catch {
     return json(request, 502, { error: "Could not parse the comparison. Please try again." });
   }
-  if (!parsed || !Array.isArray(parsed.papers) || !parsed.synthesis || !Array.isArray(parsed.research_gaps)) {
-    return json(request, 502, { error: "The comparison returned an unexpected format. Please try again." });
+  const checked = validateComparison(parsed, articles);
+  if (!checked.ok) {
+    console.warn(`compare: model answer rejected (${checked.reason})`);
+    const mismatch = ["unselected_pmid", "duplicate_pmid", "missing_pmid"].includes(checked.reason);
+    return json(request, 502, { error: mismatch ? "The comparison did not match the papers you selected. Please try again." : "The comparison returned an unexpected format. Please try again." });
   }
-  const byPmid = new Map(articles.map((a) => [a.pmid, a]));
-  for (const p of parsed.papers) {
-    const orig = byPmid.get(String(p.pmid));
-    if (orig) Object.assign(p, { title: orig.title, year: orig.year, journal: orig.journal, url: orig.url });
-  }
-  return json(request, 200, { comparison: parsed }, { "Cache-Control": "no-store" });
+  return json(request, 200, { comparison: checked.comparison }, { "Cache-Control": "no-store" });
 }
 async function handleChat(request, env, deps) {
   const { body, error } = await readBody(request);

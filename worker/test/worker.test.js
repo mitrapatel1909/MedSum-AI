@@ -372,12 +372,13 @@ test('summarize stream: upstream failure is an error event; limits and bad input
 
 // ─── Compare feature tests ────────────────────────────────────────────────────
 
+// The shape the prompt asks for and compare.html reads. (compare.test.js covers what happens when the model strays from it.)
 const COMPARE_JSON = {
   papers: [
-    { pmid: '11111111', population: 'Adults', intervention: 'Vitamin D', comparator: 'Placebo', outcome: 'Immune response', design: 'Meta-analysis', key_finding: 'Risk fell 12%' },
-    { pmid: '22222222', population: 'Adults', intervention: 'Vitamin D', comparator: 'None', outcome: 'Immune response', design: 'Observational', key_finding: 'Positive correlation' },
+    { pmid: '11111111', study_type: 'Meta-analysis', population: 'About 4,000 adults', methods: 'Pooled 12 trials', main_finding: 'Risk fell 12%', limitations: 'Doses differed between trials' },
+    { pmid: '22222222', study_type: 'Cohort study', population: 'Adults', methods: 'Observational follow-up', main_finding: 'Positive correlation', limitations: 'Confounding is possible' },
   ],
-  synthesis: 'Both papers support vitamin D benefits.',
+  synthesis: { summary: 'Both papers support vitamin D benefits.', agreements: ['Both report a benefit.'], disagreements: ['The size of the effect differs.'] },
   research_gaps: ['Long-term RCTs needed', 'Paediatric populations understudied'],
 };
 
@@ -411,11 +412,13 @@ test('compare: happy path with 2 valid PMIDs returns structured comparison', asy
   const { comparison } = await res.json();
   assert.ok(Array.isArray(comparison.papers));
   assert.equal(comparison.papers.length, 2);
-  assert.equal(typeof comparison.synthesis, 'string');
+  assert.equal(comparison.synthesis.summary, 'Both papers support vitamin D benefits.');
+  assert.deepEqual(comparison.synthesis.agreements, ['Both report a benefit.']);
   assert.ok(Array.isArray(comparison.research_gaps));
-  // titles / years should be enriched from PubMed metadata
+  // titles / years should come from PubMed metadata
   const p = comparison.papers.find((x) => x.pmid === '11111111');
-  assert.ok(p && p.title, 'paper should have title from PubMed');
+  assert.equal(p.title, 'Vitamin D & immunity: a meta-analysis of 12 trials.');
+  assert.equal(p.main_finding, 'Risk fell 12%');
 });
 
 test('compare: duplicate PMIDs are de-duplicated; 1 unique PMID returns 400', async () => {
